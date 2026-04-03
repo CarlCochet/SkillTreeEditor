@@ -23,6 +23,7 @@ public partial class App : Application
         {
             var json = File.ReadAllText(sphereBoardsPath);
             _sphereBoards = JsonSerializer.Deserialize<List<SphereBoardData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {_sphereBoards.Count} sphere boards");
         }
 
         var spheresPath = Path.Combine(folderPath, "spheres.json");
@@ -30,6 +31,7 @@ public partial class App : Application
         {
             var json = File.ReadAllText(spheresPath);
             _spheres = JsonSerializer.Deserialize<List<SphereData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {_spheres.Count} spheres");
         }
     }
     

@@ -17,7 +17,7 @@ public class SphereBoardData
     public int FighterCardListId { get; set; }
     
     [JsonPropertyName("initialSpellIds")]
-    public int InitialSpellIds { get; set; }
+    public List<int> InitialSpellIds { get; set; }
     
     [JsonPropertyName("startX")]
     public int StartX { get; set; }
