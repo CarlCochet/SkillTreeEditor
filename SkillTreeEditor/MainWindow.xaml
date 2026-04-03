@@ -205,9 +205,9 @@
                     </Canvas.RenderTransform>
                     <Canvas.Background>
                         <DrawingBrush TileMode="Tile"
-                                      Viewport="0,0,100,100"
+                                      Viewport="0,0,40,40"
                                       ViewportUnits="Absolute"
-                                      Viewbox="0,0,100,100"
+                                      Viewbox="0,0,40,40"
                                       ViewboxUnits="Absolute"
                                       Stretch="None">
                             <DrawingBrush.Drawing>
@@ -216,7 +216,7 @@
                                         <Pen Brush="#33FFFFFF" Thickness="1" />
                                     </GeometryDrawing.Pen>
                                     <GeometryDrawing.Geometry>
-                                        <RectangleGeometry Rect="0,0,100,100" />
+                                        <RectangleGeometry Rect="0,0,40,40" />
                                     </GeometryDrawing.Geometry>
                                 </GeometryDrawing>
                             </DrawingBrush.Drawing>

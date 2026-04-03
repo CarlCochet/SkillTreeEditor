@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Application = System.Windows.Application;
+using Brushes = System.Windows.Media.Brushes;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Windows.Point;
 
@@ -100,6 +101,8 @@ public partial class MainWindow : Window
         
         var selectedFolder = dialog.SelectedPath;
         App.LoadProjectFolder(selectedFolder);
+        
+        DrawFirstSphereBoard();
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -151,6 +154,7 @@ public partial class MainWindow : Window
         var mousePosition = e.GetPosition(SkillTreeCanvasHost);
 
         var oldZoom = SkillTreeCanvasScale.ScaleX;
+        
         _currentZoomStepIndex = e.Delta > 0 ? _currentZoomStepIndex + 1 : _currentZoomStepIndex - 1;
         _currentZoomStepIndex = Math.Clamp(_currentZoomStepIndex, 0, _zoomSteps.Length - 1);
         var newZoom = _zoomSteps[_currentZoomStepIndex];
@@ -226,5 +230,39 @@ public partial class MainWindow : Window
         SkillTreeCanvasScale.ScaleY = scale;
 
         SetCanvasTranslation(0, 0);
+    }
+    
+    public void DrawFirstSphereBoard()
+    {
+        SkillTreeCanvas.Children.Clear();
+
+        if (App.SphereBoards.Count == 0)
+            return;
+
+        var firstSphereBoardId = App.SphereBoards[5].Id;
+
+        foreach (var sphere in App.Spheres)
+        {
+            if (sphere.SphereBoardId != firstSphereBoardId)
+                continue;
+
+            var background = sphere.Impassable 
+                ? Brushes.Red
+                : sphere.Effects.Count > 0 
+                    ? Brushes.Blue 
+                    : Brushes.White;
+            
+            var tile = new Border
+            {
+                Width = 40,
+                Height = 40,
+                Background = background,
+                BorderBrush = Brushes.Transparent
+            };
+
+            Canvas.SetLeft(tile, sphere.XPosition * 40);
+            Canvas.SetTop(tile, SkillTreeCanvas.Height - sphere.YPosition * 40);
+            SkillTreeCanvas.Children.Add(tile);
+        }
     }
 }

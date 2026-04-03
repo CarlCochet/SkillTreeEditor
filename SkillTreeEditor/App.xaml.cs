@@ -16,6 +16,9 @@ public partial class App : Application
         PropertyNameCaseInsensitive = true
     };
     
+    public IReadOnlyList<SphereBoardData> SphereBoards => _sphereBoards;
+    public IReadOnlyList<SphereData> Spheres => _spheres;
+    
     public void LoadProjectFolder(string folderPath)
     {
         var sphereBoardsPath = Path.Combine(folderPath, "sphere_boards.json");
