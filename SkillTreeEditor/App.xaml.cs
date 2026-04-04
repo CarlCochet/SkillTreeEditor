@@ -9,15 +9,13 @@ namespace SkillTreeEditor;
 
 public partial class App : Application
 {
-    private List<SphereBoardData> _sphereBoards = [];
-    private List<SphereData> _spheres = [];
+    public List<SphereBoardData> SphereBoards = [];
+    public List<SphereData> Spheres = [];
+    public List<SpellData> SpellCards = [];
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
-    
-    public IReadOnlyList<SphereBoardData> SphereBoards => _sphereBoards;
-    public IReadOnlyList<SphereData> Spheres => _spheres;
     
     public void LoadProjectFolder(string folderPath)
     {
@@ -25,16 +23,24 @@ public partial class App : Application
         if (File.Exists(sphereBoardsPath))
         {
             var json = File.ReadAllText(sphereBoardsPath);
-            _sphereBoards = JsonSerializer.Deserialize<List<SphereBoardData>>(json, _jsonOptions) ?? [];
-            Console.WriteLine($"Loaded {_sphereBoards.Count} sphere boards");
+            SphereBoards = JsonSerializer.Deserialize<List<SphereBoardData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {SphereBoards.Count} sphere boards");
         }
 
         var spheresPath = Path.Combine(folderPath, "spheres.json");
         if (File.Exists(spheresPath))
         {
             var json = File.ReadAllText(spheresPath);
-            _spheres = JsonSerializer.Deserialize<List<SphereData>>(json, _jsonOptions) ?? [];
-            Console.WriteLine($"Loaded {_spheres.Count} spheres");
+            Spheres = JsonSerializer.Deserialize<List<SphereData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {Spheres.Count} spheres");
+        }
+        
+        var spellPath = Path.Combine(folderPath, "spell_cards.json");
+        if (File.Exists(spellPath))
+        {
+            var json = File.ReadAllText(spellPath);
+            SpellCards = JsonSerializer.Deserialize<List<SpellData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {SpellCards.Count} spells");
         }
     }
     
@@ -43,10 +49,10 @@ public partial class App : Application
         var sphereBoardsPath = Path.Combine(folderPath, "sphere_boards.json");
         var spheresPath = Path.Combine(folderPath, "spheres.json");
         
-        var sphereBoardsJson = JsonSerializer.Serialize(_sphereBoards, _jsonOptions);
+        var sphereBoardsJson = JsonSerializer.Serialize(SphereBoards, _jsonOptions);
         File.WriteAllText(sphereBoardsPath, sphereBoardsJson);
         
-        var spheresJson = JsonSerializer.Serialize(_spheres, _jsonOptions);
+        var spheresJson = JsonSerializer.Serialize(Spheres, _jsonOptions);
         File.WriteAllText(spheresPath, spheresJson);
     }
 }

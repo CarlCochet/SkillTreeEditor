@@ -4,183 +4,42 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SkillTreeEditor"
-        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
-        Title="MainWindow"
+        Title="Skill Tree Editor"
         Height="900"
-        Width="1600"
-        WindowStyle="None"
-        ResizeMode="CanResize"
-        Background="{StaticResource AppBackgroundBrush}"
-        Foreground="{StaticResource AppForegroundBrush}">
+        Width="1600">
 
     <Window.Resources>
-        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="46" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Background" Value="#FF2A2A2A" />
-            <Setter Property="Foreground" Value="{StaticResource AppForegroundBrush}" />
-            <Setter Property="BorderBrush" Value="#FF3A3A3A" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FF3A3A3A" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FF454545" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="CloseTitleBarButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource TitleBarButtonStyle}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FFE81123" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FFB50D1A" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,0,0,6" />
         </Style>
-
-        <Style TargetType="MenuItem">
-            <Setter Property="Background" Value="#FF2A2A2A" />
-            <Setter Property="Foreground" Value="{StaticResource AppForegroundBrush}" />
-            <Setter Property="BorderBrush" Value="#FF3A3A3A" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="0"
-                                Padding="8,4">
-                            <Grid>
-                                <ContentPresenter x:Name="HeaderPresenter"
-                                                  ContentSource="Header"
-                                                  RecognizesAccessKey="True"
-                                                  VerticalAlignment="Center" />
-                                <Popup x:Name="PART_Popup"
-                                       Placement="Bottom"
-                                       IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                                       AllowsTransparency="True"
-                                       Focusable="False"
-                                       PopupAnimation="Fade">
-                                    <Border Background="#FF2A2A2A"
-                                            BorderBrush="#FF3A3A3A"
-                                            BorderThickness="1"
-                                            SnapsToDevicePixels="True">
-                                        <StackPanel IsItemsHost="True" />
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FF3A3A3A" />
-                            </Trigger>
-                            <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#FF3A3A3A" />
-                            </Trigger>
-                            <Trigger Property="Role" Value="SubmenuItem">
-                                <Setter TargetName="Border" Property="Padding" Value="12,5,32,5" />
-                                <Setter TargetName="Border" Property="BorderThickness" Value="0" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0"
-                            ResizeBorderThickness="6"
-                            CornerRadius="0"
-                            GlassFrameThickness="0"
-                            UseAeroCaptionButtons="False" />
-    </shell:WindowChrome.WindowChrome>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="New" Click="New_Click" />
+                <MenuItem Header="Open" Click="Open_Click" />
+                <MenuItem Header="Save" Click="Save_Click" />
+                <Separator />
+                <MenuItem Header="Exit" Click="Exit_Click" />
+            </MenuItem>
+        </Menu>
 
-    <Grid Background="{StaticResource AppBackgroundBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <DockPanel Grid.Row="0" Background="#FF252526" LastChildFill="True">
-            <TextBlock Text="Skill Tree Editor"
-                       VerticalAlignment="Center"
-                       Margin="8,0,0,0"
-                       Foreground="{StaticResource AppForegroundBrush}" />
-
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Style="{StaticResource TitleBarButtonStyle}" Content="—" Click="Minimize_Click" />
-                <Button Style="{StaticResource TitleBarButtonStyle}" Content="⬜" Click="Maximize_Click" />
-                <Button Style="{StaticResource CloseTitleBarButtonStyle}" Content="✕" Click="Close_Click" />
-            </StackPanel>
-
-            <Menu Background="Transparent"
-                  Foreground="{StaticResource AppForegroundBrush}"
-                  VerticalAlignment="Center"
-                  Margin="12,0,0,0">
-                <MenuItem Header="_File">
-                    <MenuItem Header="_New" Click="New_Click" />
-                    <MenuItem Header="_Open" Click="Open_Click" />
-                    <MenuItem Header="_Save" Click="Save_Click" />
-                    <MenuItem Header="E_xit" Click="Exit_Click" />
-                </MenuItem>
-            </Menu>
-
-            <Border Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" />
-        </DockPanel>
-
-        <Grid Grid.Row="1" Margin="3">
+        <Grid Margin="6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="3" />
+                <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="800" />
             </Grid.ColumnDefinitions>
 
+            <!-- Skill tree canvas -->
             <Border x:Name="SkillTreeCanvasHost"
                     Grid.Column="0"
-                    Background="{StaticResource AppPanelBrush}"
-                    BorderBrush="{StaticResource AppBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="3"
+                    CornerRadius="4"
                     ClipToBounds="True">
                 <Canvas x:Name="SkillTreeCanvas"
                         Width="4000"
@@ -195,12 +54,8 @@
                         RenderTransformOrigin="0,0">
                     <Canvas.RenderTransform>
                         <TransformGroup>
-                            <ScaleTransform x:Name="SkillTreeCanvasScale"
-                                            ScaleX="1"
-                                            ScaleY="1" />
-                            <TranslateTransform x:Name="SkillTreeCanvasTranslate"
-                                                X="0"
-                                                Y="0" />
+                            <ScaleTransform x:Name="SkillTreeCanvasScale" ScaleX="1" ScaleY="1" />
+                            <TranslateTransform x:Name="SkillTreeCanvasTranslate" X="0" Y="0" />
                         </TransformGroup>
                     </Canvas.RenderTransform>
                     <Canvas.Background>
@@ -225,32 +80,138 @@
                 </Canvas>
             </Border>
 
+            <!-- Right-side panels -->
             <Grid Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="3" />
+                    <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0"
-                        Padding="8"
-                        Background="{StaticResource AppPanelBrush}"
-                        BorderBrush="{StaticResource AppBorderBrush}"
+                        Padding="12"
                         BorderThickness="1"
-                        CornerRadius="3">
+                        CornerRadius="4">
                     <StackPanel>
                         <TextBlock Text="SphereBoard / Sphere"
                                    Style="{StaticResource SectionHeaderStyle}" />
-                        <TextBlock Text="Controls will go here later." Opacity="0.7" />
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="Sphere Board:"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center" />
+                            <ComboBox x:Name="SphereBoardSelector"
+                                      Width="180"
+                                      HorizontalAlignment="Left"
+                                      SelectionChanged="SphereBoardSelector_SelectionChanged" />
+                        </StackPanel>
+
+                        <Separator Margin="0,12,0,12" />
+
+                        <TextBlock Text="Sphere Board Data"
+                                   Style="{StaticResource SectionHeaderStyle}" />
+
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="0"
+                                       Text="Breed:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,8" />
+                            <ComboBox x:Name="BreedSelector"
+                                      Grid.Row="0"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="Id"
+                                      SelectionChanged="BreedSelector_SelectionChanged" />
+
+                            <TextBlock Grid.Row="1"
+                                       Grid.Column="0"
+                                       Text="Initial Spell 1:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,8" />
+                            <ComboBox x:Name="InitialSpell1Selector"
+                                      Grid.Row="1"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="Id"
+                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                            <TextBlock Grid.Row="2"
+                                       Grid.Column="0"
+                                       Text="Initial Spell 2:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,8" />
+                            <ComboBox x:Name="InitialSpell2Selector"
+                                      Grid.Row="2"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="Id"
+                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                            <TextBlock Grid.Row="3"
+                                       Grid.Column="0"
+                                       Text="Initial Spell 3:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,8" />
+                            <ComboBox x:Name="InitialSpell3Selector"
+                                      Grid.Row="3"
+                                      Grid.Column="1"
+                                      Margin="0,0,0,8"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="Id"
+                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                            <TextBlock Grid.Row="4"
+                                       Grid.Column="0"
+                                       Text="Start X:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,8" />
+                            <TextBox x:Name="StartXTextBox"
+                                     Grid.Row="4"
+                                     Grid.Column="1"
+                                     Margin="0,0,0,8"
+                                     TextChanged="StartCoordinateTextBox_TextChanged" />
+
+                            <TextBlock Grid.Row="5"
+                                       Grid.Column="0"
+                                       Text="Start Y:"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,8,0" />
+                            <TextBox x:Name="StartYTextBox"
+                                     Grid.Row="5"
+                                     Grid.Column="1"
+                                     TextChanged="StartCoordinateTextBox_TextChanged" />
+                        </Grid>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="2"
-                        Padding="8"
-                        Background="{StaticResource AppPanelBrush}"
-                        BorderBrush="{StaticResource AppBorderBrush}"
+                        Padding="12"
                         BorderThickness="1"
-                        CornerRadius="3">
+                        CornerRadius="4">
                     <StackPanel>
                         <TextBlock Text="Effect"
                                    Style="{StaticResource SectionHeaderStyle}" />
@@ -259,5 +220,5 @@
                 </Border>
             </Grid>
         </Grid>
-    </Grid>
+    </DockPanel>
 </Window>

@@ -9,8 +9,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SkillTreeEditor.Enums;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
+using ComboBox = System.Windows.Controls.ComboBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Windows.Point;
 
@@ -18,13 +20,18 @@ namespace SkillTreeEditor;
 
 public partial class MainWindow : Window
 {
+    private sealed record BreedItem(int Id, string Name);
+    private sealed record SpellItem(int Id, string Name);
+    
     private const double PanThreshold = 3.0;
     
     private readonly double[] _zoomSteps = [ 0.1, 0.2, 0.4, 0.8, 1.6, 3.2 ];
     private int _currentZoomStepIndex = 1;
     private bool _isPanning;
+    private bool _isUpdatingSphereBoardControls;
     private Point _panStartMousePosition;
     private Point _panStartCanvasOffset;
+    private SphereBoardData? _selectedSphereBoard;
     
     private static App App => (App)Application.Current;
     
@@ -35,9 +42,17 @@ public partial class MainWindow : Window
         InitializeComponent();
         SourceInitialized += OnSourceInitialized;
         SizeChanged += OnSizeChanged;
+        Loaded += (_, _) => InitWidgets();
         FitCanvasToHost();
     }
-    
+
+    private void InitWidgets()
+    {
+        RefreshSphereBoardSelector();
+        RefreshBreedSelector();
+        RefreshInitialSpellSelectors(0);
+    }
+
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         FitCanvasToHost();
@@ -102,7 +117,11 @@ public partial class MainWindow : Window
         var selectedFolder = dialog.SelectedPath;
         App.LoadProjectFolder(selectedFolder);
         
-        DrawFirstSphereBoard();
+        RefreshSphereBoardSelector();
+        if (App.SphereBoards.Count == 0)
+            return;
+        
+        DrawSphereBoard(App.SphereBoards[0].Id);
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -193,6 +212,93 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
     
+    private void SphereBoardSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SphereBoardSelector.SelectedItem is not int selectedSphereBoardId)
+        {
+            SetSelectedSphereBoard(null);
+            return;
+        }
+
+        SetSelectedSphereBoard(App.SphereBoards.FirstOrDefault(board => board.Id == selectedSphereBoardId));
+
+        if (_selectedSphereBoard is not null)
+            DrawSphereBoard(_selectedSphereBoard.Id);
+    }
+
+    private void BreedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)
+            return;
+
+        if (BreedSelector.SelectedValue is int breedId)
+            _selectedSphereBoard.BreedId = breedId;
+    }
+
+    private void InitialSpellSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)
+            return;
+
+        _selectedSphereBoard.InitialSpellIds =
+        [
+            GetNullableIntFromComboBox(InitialSpell1Selector) ?? 0,
+            GetNullableIntFromComboBox(InitialSpell2Selector) ?? 0,
+            GetNullableIntFromComboBox(InitialSpell3Selector) ?? 0
+        ];
+    }
+
+    private void StartCoordinateTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)
+            return;
+
+        if (int.TryParse(StartXTextBox.Text, out var startX))
+            _selectedSphereBoard.StartX = startX;
+
+        if (int.TryParse(StartYTextBox.Text, out var startY))
+            _selectedSphereBoard.StartY = startY;
+    }
+    
+    private void SetSelectedSphereBoard(SphereBoardData? sphereBoard)
+    {
+        _selectedSphereBoard = sphereBoard;
+        UpdateSphereBoardControlsFromSelectedBoard();
+    }
+
+    private void UpdateSphereBoardControlsFromSelectedBoard()
+    {
+        if (_selectedSphereBoard is null)
+            return;
+
+        _isUpdatingSphereBoardControls = true;
+        try
+        {
+            BreedSelector.SelectedValue = _selectedSphereBoard.BreedId;
+            RefreshInitialSpellSelectors(_selectedSphereBoard.BreedId);
+
+            InitialSpell1Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(0);
+            InitialSpell2Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(1);
+            InitialSpell3Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(2);
+
+            StartXTextBox.Text = _selectedSphereBoard.StartX.ToString();
+            StartYTextBox.Text = _selectedSphereBoard.StartY.ToString();
+        }
+        finally
+        {
+            _isUpdatingSphereBoardControls = false;
+        }
+    }
+
+    private static int? GetNullableIntFromComboBox(ComboBox comboBox)
+    {
+        return comboBox.SelectedItem switch
+        {
+            int value => value,
+            _ => null
+        };
+    }
+    
     private void SetCanvasTranslation(double x, double y)
     {
         var hostWidth = SkillTreeCanvasHost.ActualWidth;
@@ -231,27 +337,50 @@ public partial class MainWindow : Window
 
         SetCanvasTranslation(0, 0);
     }
+
+    private void RefreshSphereBoardSelector()
+    {
+        SphereBoardSelector.ItemsSource = App.SphereBoards.Select(board => board.Id).ToList();
+
+        if (App.SphereBoards.Count > 0)
+            SphereBoardSelector.SelectedIndex = 0;
+    }
     
-    public void DrawFirstSphereBoard()
+    private void RefreshBreedSelector()
+    {
+        BreedSelector.ItemsSource = Enum.GetValues<Breeds>()
+            .Select(breed => new BreedItem((int)breed, breed.ToString()))
+            .ToList();
+    }
+
+    private void RefreshInitialSpellSelectors(int breedId)
+    {
+        var items = App.SpellCards
+            .Where(spell => (int)spell.Category == breedId)
+            .Select(spell => new SpellItem(spell.Id, spell.Name))
+            .OrderBy(spell => spell.Name)
+            .ToList();
+        
+        InitialSpell1Selector.ItemsSource = items;
+        InitialSpell2Selector.ItemsSource = items;
+        InitialSpell3Selector.ItemsSource = items;
+    }
+
+    private void DrawSphereBoard(int sphereBoardId)
     {
         SkillTreeCanvas.Children.Clear();
 
-        if (App.SphereBoards.Count == 0)
-            return;
-
-        var firstSphereBoardId = App.SphereBoards[5].Id;
-
         foreach (var sphere in App.Spheres)
         {
-            if (sphere.SphereBoardId != firstSphereBoardId)
+            if (sphere.SphereBoardId != sphereBoardId)
                 continue;
 
-            var background = sphere.Impassable 
+            var background = sphere.Impassable
                 ? Brushes.Red
-                : sphere.Effects.Count > 0 
-                    ? Brushes.Blue 
+                : sphere.Effects.Count > 0
+                    ? Brushes.Blue
                     : Brushes.White;
-            
+
             var tile = new Border
             {
                 Width = 40,
