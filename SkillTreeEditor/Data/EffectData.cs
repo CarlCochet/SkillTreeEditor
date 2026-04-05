@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using SkillTreeEditor.Enums;
 
 namespace SkillTreeEditor;
 
@@ -25,4 +26,9 @@ public class EffectData
     [JsonPropertyName("critical")] public bool Critical { get; set; }
     [JsonPropertyName("personal")] public bool Personal { get; set; }
     [JsonPropertyName("affectedByLocalisation")] public bool AffectedByLocalisation { get; set; }
+    
+    public string ActionTypeName =>
+        Enum.IsDefined(typeof(ActionType), ActionId)
+            ? ((ActionType)ActionId).ToString()
+            : $"Unknown ({ActionId})";
 }

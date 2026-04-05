@@ -2,8 +2,7 @@
 
 public enum EditorMode
 {
-    Select = 0,
-    Add = 1,
-    Remove = 2,
-    Link = 3
+    Add = 0,
+    Remove = 1,
+    Select = 2
 }

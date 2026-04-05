@@ -12,7 +12,6 @@ using System.Windows.Shapes;
 using SkillTreeEditor.Enums;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
-using ComboBox = System.Windows.Controls.ComboBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Windows.Point;
 
@@ -20,8 +19,7 @@ namespace SkillTreeEditor;
 
 public partial class MainWindow : Window
 {
-    private sealed record BreedItem(int Id, string Name);
-    private sealed record SpellItem(int Id, string Name);
+    private sealed record EnumItem(int Id, string Name);
     
     private const double PanThreshold = 3.0;
     
@@ -29,9 +27,14 @@ public partial class MainWindow : Window
     private int _currentZoomStepIndex = 1;
     private bool _isPanning;
     private bool _isUpdatingSphereBoardControls;
+    private bool _isUpdatingSphereControls;
+    private bool _isUpdatingEffectControls;
+    private EditorMode _sphereEditionMode = EditorMode.Select;
     private Point _panStartMousePosition;
     private Point _panStartCanvasOffset;
     private SphereBoardData? _selectedSphereBoard;
+    private SphereData? _selectedSphere;
+    private EffectData? _selectedEffect;
     
     private static App App => (App)Application.Current;
     
@@ -49,8 +52,13 @@ public partial class MainWindow : Window
     private void InitWidgets()
     {
         RefreshSphereBoardSelector();
-        RefreshBreedSelector();
-        RefreshInitialSpellSelectors(0);
+        LoadBreedSelector();
+        RefreshSpellSelectors(0);
+        LoadActionSelector();
+        LoadAreaShapeSelector();
+        
+        UpdateSphereControlsFromSelectedSphere();
+        UpdateEffectControlsFromSelectedEffect();
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -121,7 +129,8 @@ public partial class MainWindow : Window
         if (App.SphereBoards.Count == 0)
             return;
         
-        DrawSphereBoard(App.SphereBoards[0].Id);
+        _selectedSphereBoard = App.SphereBoards[0];
+        DrawSphereBoard();
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -223,16 +232,45 @@ public partial class MainWindow : Window
         SetSelectedSphereBoard(App.SphereBoards.FirstOrDefault(board => board.Id == selectedSphereBoardId));
 
         if (_selectedSphereBoard is not null)
-            DrawSphereBoard(_selectedSphereBoard.Id);
+            DrawSphereBoard();
     }
 
     private void BreedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)
             return;
+        
+        if (BreedSelector.SelectedValue is not int breedId)
+            return;
+        
+        _selectedSphereBoard.BreedId = breedId;
+        RefreshSpellSelectors(breedId);
 
-        if (BreedSelector.SelectedValue is int breedId)
-            _selectedSphereBoard.BreedId = breedId;
+        var defaultSpellIds = App.SpellCards
+            .Where(spell => (int)spell.Category == breedId)
+            .OrderBy(spell => spell.Name)
+            .Take(3)
+            .Select(spell => spell.Id)
+            .ToList();
+
+        _isUpdatingSphereBoardControls = true;
+        try
+        {
+            _selectedSphereBoard.InitialSpellIds =
+            [
+                defaultSpellIds.ElementAtOrDefault(0),
+                defaultSpellIds.ElementAtOrDefault(1),
+                defaultSpellIds.ElementAtOrDefault(2)
+            ];
+
+            InitialSpell1Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(0);
+            InitialSpell2Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(1);
+            InitialSpell3Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(2);
+        }
+        finally
+        {
+            _isUpdatingSphereBoardControls = false;
+        }
     }
 
     private void InitialSpellSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -242,9 +280,9 @@ public partial class MainWindow : Window
 
         _selectedSphereBoard.InitialSpellIds =
         [
-            GetNullableIntFromComboBox(InitialSpell1Selector) ?? 0,
-            GetNullableIntFromComboBox(InitialSpell2Selector) ?? 0,
-            GetNullableIntFromComboBox(InitialSpell3Selector) ?? 0
+            ControlHandler.GetNullableIntFromComboBox(InitialSpell1Selector) ?? 0,
+            ControlHandler.GetNullableIntFromComboBox(InitialSpell2Selector) ?? 0,
+            ControlHandler.GetNullableIntFromComboBox(InitialSpell3Selector) ?? 0
         ];
     }
 
@@ -258,12 +296,185 @@ public partial class MainWindow : Window
 
         if (int.TryParse(StartYTextBox.Text, out var startY))
             _selectedSphereBoard.StartY = startY;
+        
+        DrawSphereBoard();
+    }
+    
+    private void SphereModeAdd_Click(object sender, RoutedEventArgs e)
+    {
+        _sphereEditionMode = EditorMode.Add;
+    }
+
+    private void SphereModeRemove_Click(object sender, RoutedEventArgs e)
+    {
+        _sphereEditionMode = EditorMode.Remove;
+    }
+
+    private void SphereModeSelect_Click(object sender, RoutedEventArgs e)
+    {
+        _sphereEditionMode = EditorMode.Select;
+    }
+
+    private void SphereSpellSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedSphere is null || _isUpdatingSphereControls)
+            return;
+
+        if (SphereSpellSelector.SelectedValue is int spellId)
+            _selectedSphere.SpellId = spellId;
+    }
+
+    private void SphereImpassableCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphere is null || _isUpdatingSphereControls)
+            return;
+
+        _selectedSphere.Impassable = SphereImpassableCheckBox.IsChecked == true;
+        DrawSphereBoard();
+    }
+
+    private void SphereValueTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_selectedSphere is null || _isUpdatingSphereControls)
+            return;
+
+        if (int.TryParse(SphereXpNumberTextBox.Text, out var xpNumber))
+            _selectedSphere.XpNumber = xpNumber;
+        
+        if (int.TryParse(SphereFighterCardListIdTextBox.Text, out var fighterCardListId))
+            _selectedSphere.FighterCardListId = fighterCardListId;
+
+        if (int.TryParse(SphereTeleportXTextBox.Text, out var teleportX))
+            _selectedSphere.TeleportXPosition = teleportX;
+
+        if (int.TryParse(SphereTeleportYTextBox.Text, out var teleportY))
+            _selectedSphere.TeleportYPosition = teleportY;
+
+        if (int.TryParse(SphereXPositionTextBox.Text, out var x))
+            _selectedSphere.XPosition = x;
+
+        if (int.TryParse(SphereYPositionTextBox.Text, out var y))
+            _selectedSphere.YPosition = y;
+
+        DrawSphereBoard();
+    }
+    
+    private void EffectAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphere is null)
+            return;
+
+        var effect = new EffectData
+        {
+            ParentId = _selectedSphere.Id,
+            ParentType = nameof(SphereData)
+        };
+
+        _selectedSphere.Effects.Add(effect);
+        RefreshEffectSelector();
+        SetSelectedEffect(effect);
+    }
+
+    private void EffectRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphere is null || _selectedEffect is null)
+            return;
+
+        var index = _selectedSphere.Effects.IndexOf(_selectedEffect);
+        if (index < 0)
+            return;
+
+        _selectedSphere.Effects.RemoveAt(index);
+        RefreshEffectSelector();
+
+        var nextIndex = Math.Min(index, _selectedSphere.Effects.Count - 1);
+        SetSelectedEffect(nextIndex >= 0 ? _selectedSphere.Effects[nextIndex] : null);
+    }
+
+    private void EffectSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingEffectControls)
+            return;
+
+        SetSelectedEffect(EffectSelector.SelectedItem as EffectData);
+    }
+    
+    private void ActionIdSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (ActionIdSelector.SelectedValue is int actionId)
+            _selectedEffect.ActionId = actionId;
+    }
+
+    private void AreaShapeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (AreaShapeSelector.SelectedValue is int areaShape)
+            _selectedEffect.AreaShape = areaShape;
+    }
+
+    private void TargetTriggerSelfCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        _selectedEffect.TargetTriggerSelf = TargetTriggerSelfCheckBox.IsChecked == true;
+    }
+
+    private void AreaSizeTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        _selectedEffect.AreaSize =
+        [
+            Parsing.ParseIntOrDefault(AreaSize0TextBox.Text),
+            Parsing.ParseIntOrDefault(AreaSize1TextBox.Text)
+        ];
+    }
+
+    private void DurationTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        _selectedEffect.Duration =
+        [
+            Parsing.ParseIntOrDefault(DurationTextBox.Text),
+            0
+        ];
+    }
+
+    private void TriggeredWithDurationCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        _selectedEffect.TriggeredWithDuration = TriggeredWithDurationCheckBox.IsChecked == true;
     }
     
     private void SetSelectedSphereBoard(SphereBoardData? sphereBoard)
     {
         _selectedSphereBoard = sphereBoard;
         UpdateSphereBoardControlsFromSelectedBoard();
+    }
+    
+    private void SetSelectedSphere(SphereData? sphere)
+    {
+        _selectedSphere = sphere;
+        UpdateSphereControlsFromSelectedSphere();
+        RefreshEffectSelector();
+        SetSelectedEffect(null);
+    }
+    
+    private void SetSelectedEffect(EffectData? effect)
+    {
+        _selectedEffect = effect;
+        UpdateEffectControlsFromSelectedEffect();
     }
 
     private void UpdateSphereBoardControlsFromSelectedBoard()
@@ -275,7 +486,7 @@ public partial class MainWindow : Window
         try
         {
             BreedSelector.SelectedValue = _selectedSphereBoard.BreedId;
-            RefreshInitialSpellSelectors(_selectedSphereBoard.BreedId);
+            RefreshSpellSelectors(_selectedSphereBoard.BreedId);
 
             InitialSpell1Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(0);
             InitialSpell2Selector.SelectedValue = _selectedSphereBoard.InitialSpellIds.ElementAtOrDefault(1);
@@ -289,15 +500,81 @@ public partial class MainWindow : Window
             _isUpdatingSphereBoardControls = false;
         }
     }
-
-    private static int? GetNullableIntFromComboBox(ComboBox comboBox)
+    
+    private void UpdateSphereControlsFromSelectedSphere()
     {
-        return comboBox.SelectedItem switch
+        if (_selectedSphere is null)
         {
-            int value => value,
-            _ => null
-        };
+            _isUpdatingSphereControls = true;
+            try
+            {
+                SphereXpNumberTextBox.Text = string.Empty;
+                SphereTeleportXTextBox.Text = string.Empty;
+                SphereTeleportYTextBox.Text = string.Empty;
+                SphereXPositionTextBox.Text = string.Empty;
+                SphereYPositionTextBox.Text = string.Empty;
+                SphereSpellSelector.SelectedIndex = -1;
+                SphereImpassableCheckBox.IsChecked = false;
+                EffectSelector.ItemsSource = null;
+            }
+            finally
+            {
+                _isUpdatingSphereControls = false;
+            }
+
+            return;
+        }
+
+        _isUpdatingSphereControls = true;
+        try
+        {
+            SphereXpNumberTextBox.Text = _selectedSphere.XpNumber.ToString();
+            SphereTeleportXTextBox.Text = _selectedSphere.TeleportXPosition.ToString();
+            SphereTeleportYTextBox.Text = _selectedSphere.TeleportYPosition.ToString();
+            SphereXPositionTextBox.Text = _selectedSphere.XPosition.ToString();
+            SphereYPositionTextBox.Text = _selectedSphere.YPosition.ToString();
+            SphereSpellSelector.SelectedValue = _selectedSphere.SpellId;
+            SphereImpassableCheckBox.IsChecked = _selectedSphere.Impassable;
+            RefreshEffectSelector();
+        }
+        finally
+        {
+            _isUpdatingSphereControls = false;
+        }
     }
+    
+    private void UpdateEffectControlsFromSelectedEffect()
+    {
+        _isUpdatingEffectControls = true;
+        try
+        {
+            if (_selectedEffect is null)
+            {
+                ActionIdSelector.SelectedIndex = -1;
+                AreaShapeSelector.SelectedIndex = -1;
+                TargetTriggerSelfCheckBox.IsChecked = false;
+                AreaSize0TextBox.Text = string.Empty;
+                AreaSize1TextBox.Text = string.Empty;
+                DurationTextBox.Text = string.Empty;
+                TriggeredWithDurationCheckBox.IsChecked = false;
+                return;
+            }
+
+            ActionIdSelector.SelectedValue = _selectedEffect.ActionId;
+            AreaShapeSelector.SelectedValue = _selectedEffect.AreaShape;
+            TargetTriggerSelfCheckBox.IsChecked = _selectedEffect.TargetTriggerSelf;
+            AreaSize0TextBox.Text = _selectedEffect.AreaSize.ElementAtOrDefault(0).ToString();
+            AreaSize1TextBox.Text = _selectedEffect.AreaSize.ElementAtOrDefault(1).ToString();
+            DurationTextBox.Text = _selectedEffect.Duration.ElementAtOrDefault(0).ToString();
+            TriggeredWithDurationCheckBox.IsChecked = _selectedEffect.TriggeredWithDuration;
+        }
+        finally
+        {
+            _isUpdatingEffectControls = false;
+        }
+    }
+
+    
     
     private void SetCanvasTranslation(double x, double y)
     {
@@ -346,52 +623,83 @@ public partial class MainWindow : Window
             SphereBoardSelector.SelectedIndex = 0;
     }
     
-    private void RefreshBreedSelector()
+    private void LoadBreedSelector()
     {
         BreedSelector.ItemsSource = Enum.GetValues<Breeds>()
-            .Select(breed => new BreedItem((int)breed, breed.ToString()))
+            .Select(breed => new EnumItem((int)breed, breed.ToString()))
             .ToList();
     }
 
-    private void RefreshInitialSpellSelectors(int breedId)
+    private void RefreshSpellSelectors(int breedId)
     {
         var items = App.SpellCards
             .Where(spell => (int)spell.Category == breedId)
-            .Select(spell => new SpellItem(spell.Id, spell.Name))
+            .Select(spell => new EnumItem(spell.Id, spell.Name))
             .OrderBy(spell => spell.Name)
             .ToList();
         
         InitialSpell1Selector.ItemsSource = items;
         InitialSpell2Selector.ItemsSource = items;
         InitialSpell3Selector.ItemsSource = items;
+        SphereSpellSelector.ItemsSource = items;
+    }
+    
+    private void LoadActionSelector()
+    {
+        ActionIdSelector.ItemsSource = Enum.GetValues<ActionType>()
+            .Select(actionType => new EnumItem((int)actionType, actionType.ToString()))
+            .OrderBy(item => item.Name)
+            .ToList();
     }
 
-    private void DrawSphereBoard(int sphereBoardId)
+    private void LoadAreaShapeSelector()
+    {
+        AreaShapeSelector.ItemsSource = Enum.GetValues<AreaShape>()
+            .Select(areaShape => new EnumItem((int)areaShape, areaShape.ToString()))
+            .OrderBy(item => item.Name)
+            .ToList();
+    }
+    
+    private void RefreshEffectSelector()
+    {
+        EffectSelector.ItemsSource = _selectedSphere?.Effects;
+    }
+    
+    private void DrawSphereBoard()
     {
         SkillTreeCanvas.Children.Clear();
+        if (_selectedSphereBoard is null)
+            return;
 
         foreach (var sphere in App.Spheres)
         {
-            if (sphere.SphereBoardId != sphereBoardId)
+            if (sphere.SphereBoardId != _selectedSphereBoard.Id)
                 continue;
 
-            var background = sphere.Impassable
+            var color = sphere.Impassable
                 ? Brushes.Red
                 : sphere.Effects.Count > 0
                     ? Brushes.Blue
                     : Brushes.White;
-
-            var tile = new Border
-            {
-                Width = 40,
-                Height = 40,
-                Background = background,
-                BorderBrush = Brushes.Transparent
-            };
-
-            Canvas.SetLeft(tile, sphere.XPosition * 40);
-            Canvas.SetTop(tile, SkillTreeCanvas.Height - sphere.YPosition * 40);
-            SkillTreeCanvas.Children.Add(tile);
+            
+            DrawTile(sphere.XPosition, sphere.YPosition, color);
         }
+        
+        DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Green);
+    }
+
+    private void DrawTile(int x, int y, SolidColorBrush brush)
+    {
+        var tile = new Border
+        {
+            Width = 40,
+            Height = 40,
+            Background = brush,
+            BorderBrush = Brushes.Transparent
+        };
+
+        Canvas.SetLeft(tile, x * 40);
+        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * 40);
+        SkillTreeCanvas.Children.Add(tile);
     }
 }
