@@ -12,8 +12,11 @@ using System.Windows.Shapes;
 using SkillTreeEditor.Enums;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
+using ComboBox = System.Windows.Controls.ComboBox;
+using ListBox = System.Windows.Controls.ListBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Windows.Point;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace SkillTreeEditor;
 
@@ -56,6 +59,8 @@ public partial class MainWindow : Window
         RefreshSpellSelectors(0);
         LoadActionSelector();
         LoadAreaShapeSelector();
+        LoadTriggerSelectors();
+        LoadTargetSelector();
         
         UpdateSphereControlsFromSelectedSphere();
         UpdateEffectControlsFromSelectedEffect();
@@ -457,6 +462,75 @@ public partial class MainWindow : Window
         _selectedEffect.TriggeredWithDuration = TriggeredWithDurationCheckBox.IsChecked == true;
     }
     
+    private void EffectParamAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (!double.TryParse(EffectParamNewValueTextBox.Text, out var value))
+            return;
+
+        _selectedEffect.Params.Add(value);
+        UpdateEffectControlsFromSelectedEffect();
+    }
+
+    private void EffectParamRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectParamsListBox, _selectedEffect?.Params);
+    }
+
+    private void EffectTriggerBeforeAdd_Click(object sender, RoutedEventArgs e)
+    {
+        AddEnumEffectListItem(EffectTriggerBeforeSelector, effect => effect.TriggersBefore);
+    }
+
+    private void EffectTriggerBeforeRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectTriggersBeforeListBox, _selectedEffect?.TriggersBefore);
+    }
+
+    private void EffectTriggerAfterAdd_Click(object sender, RoutedEventArgs e)
+    {
+        AddEnumEffectListItem(EffectTriggerAfterSelector, effect => effect.TriggersAfter);
+
+    }
+
+    private void EffectTriggerAfterRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectTriggersAfterListBox, _selectedEffect?.TriggersAfter);
+    }
+
+    private void EffectEndTriggerAdd_Click(object sender, RoutedEventArgs e)
+    {
+        AddEnumEffectListItem(EffectEndTriggerSelector, effect => effect.EndTriggers);
+
+    }
+
+    private void EffectEndTriggerRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectEndTriggersListBox, _selectedEffect?.EndTriggers);
+    }
+
+    private void EffectServerSideTriggerAdd_Click(object sender, RoutedEventArgs e)
+    {
+        AddEnumEffectListItem(EffectServerSideTriggerSelector, effect => effect.ServerSideTriggers);
+    }
+
+    private void EffectServerSideTriggerRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectServerSideTriggersListBox, _selectedEffect?.ServerSideTriggers);
+    }
+
+    private void EffectTargetAdd_Click(object sender, RoutedEventArgs e)
+    {
+        AddEnumEffectListItem(EffectTargetSelector, effect => effect.Targets);
+    }
+
+    private void EffectTargetRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectTargetsListBox, _selectedEffect?.Targets);
+    }
+    
     private void SetSelectedSphereBoard(SphereBoardData? sphereBoard)
     {
         _selectedSphereBoard = sphereBoard;
@@ -521,7 +595,6 @@ public partial class MainWindow : Window
             {
                 _isUpdatingSphereControls = false;
             }
-
             return;
         }
 
@@ -557,6 +630,12 @@ public partial class MainWindow : Window
                 AreaSize1TextBox.Text = string.Empty;
                 DurationTextBox.Text = string.Empty;
                 TriggeredWithDurationCheckBox.IsChecked = false;
+                EffectParamsListBox.ItemsSource = null;
+                EffectTriggersBeforeListBox.ItemsSource = null;
+                EffectTriggersAfterListBox.ItemsSource = null;
+                EffectEndTriggersListBox.ItemsSource = null;
+                EffectServerSideTriggersListBox.ItemsSource = null;
+                EffectTargetsListBox.ItemsSource = null;
                 return;
             }
 
@@ -567,6 +646,13 @@ public partial class MainWindow : Window
             AreaSize1TextBox.Text = _selectedEffect.AreaSize.ElementAtOrDefault(1).ToString();
             DurationTextBox.Text = _selectedEffect.Duration.ElementAtOrDefault(0).ToString();
             TriggeredWithDurationCheckBox.IsChecked = _selectedEffect.TriggeredWithDuration;
+            
+            EffectParamsListBox.ItemsSource = _selectedEffect.Params.ToList();
+            EffectTriggersBeforeListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.TriggersBefore);
+            EffectTriggersAfterListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.TriggersAfter);
+            EffectEndTriggersListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.EndTriggers);
+            EffectServerSideTriggersListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.ServerSideTriggers);
+            EffectTargetsListBox.ItemsSource = CreateEnumItems<TargetType>(_selectedEffect.Targets);
         }
         finally
         {
@@ -574,7 +660,51 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AddIntEffectListItem(TextBox input, Func<EffectData, List<int>> listSelector)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (!int.TryParse(input.Text, out var value))
+            return;
+
+        listSelector(_selectedEffect).Add(value);
+        UpdateEffectControlsFromSelectedEffect();
+    }
+
+    private void RemoveEffectListItem<T>(ListBox listBox, List<T>? items)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls || items is null)
+            return;
+
+        if (listBox.SelectedIndex < 0 || listBox.SelectedIndex >= items.Count)
+            return;
+
+        items.RemoveAt(listBox.SelectedIndex);
+        UpdateEffectControlsFromSelectedEffect();
+    }
     
+    private void AddEnumEffectListItem(ComboBox comboBox, Func<EffectData, List<int>> listSelector)
+    {
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (comboBox.SelectedValue is not int value)
+            return;
+
+        listSelector(_selectedEffect).Add(value);
+        UpdateEffectControlsFromSelectedEffect();
+    }
+    
+    private static List<EnumItem> CreateEnumItems<TEnum>(IEnumerable<int> values)
+        where TEnum : struct, Enum
+    {
+        return values
+            .Select(value => new EnumItem(value, Enum.IsDefined(typeof(TEnum), value)
+                ? ((TEnum)(object)value).ToString()
+                : $"Unknown ({value})"))
+            .ToList();
+    }
     
     private void SetCanvasTranslation(double x, double y)
     {
@@ -656,6 +786,27 @@ public partial class MainWindow : Window
     {
         AreaShapeSelector.ItemsSource = Enum.GetValues<AreaShape>()
             .Select(areaShape => new EnumItem((int)areaShape, areaShape.ToString()))
+            .OrderBy(item => item.Name)
+            .ToList();
+    }
+    
+    private void LoadTriggerSelectors()
+    {
+        var items = Enum.GetValues<TriggerType>()
+            .Select(triggerType => new EnumItem((int)triggerType, triggerType.ToString()))
+            .OrderBy(item => item.Name)
+            .ToList();
+        
+        EffectTriggerBeforeSelector.ItemsSource = items;
+        EffectTriggerAfterSelector.ItemsSource = items;
+        EffectEndTriggerSelector.ItemsSource = items;
+        EffectServerSideTriggerSelector.ItemsSource = items;
+    }
+    
+    private void LoadTargetSelector()
+    {
+        EffectTargetSelector.ItemsSource = Enum.GetValues<TargetType>()
+            .Select(targetType => new EnumItem((int)targetType, targetType.ToString()))
             .OrderBy(item => item.Name)
             .ToList();
     }

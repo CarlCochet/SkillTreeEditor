@@ -87,143 +87,406 @@
                     <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0"
-                        Padding="12"
-                        BorderThickness="1"
-                        CornerRadius="4">
-                    <StackPanel>
-                        <TextBlock Text="SphereBoard / Sphere"
-                                   Style="{StaticResource SectionHeaderStyle}" />
-                        <StackPanel Orientation="Horizontal"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="Sphere Board:"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,0"
-                                       VerticalAlignment="Center" />
-                            <ComboBox x:Name="SphereBoardSelector"
-                                      Width="180"
-                                      HorizontalAlignment="Left"
-                                      SelectionChanged="SphereBoardSelector_SelectionChanged" />
-                        </StackPanel>
-
-                        <Separator Margin="0,12,0,12" />
-
-                        <TextBlock Text="Sphere Board Data"
-                                   Style="{StaticResource SectionHeaderStyle}" />
-
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="0"
-                                       Text="Breed:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="BreedSelector"
-                                      Grid.Row="0"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="BreedSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="1"
-                                       Grid.Column="0"
-                                       Text="Initial Spell 1:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="InitialSpell1Selector"
-                                      Grid.Row="1"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Text="Initial Spell 2:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="InitialSpell2Selector"
-                                      Grid.Row="2"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="3"
-                                       Grid.Column="0"
-                                       Text="Initial Spell 3:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="InitialSpell3Selector"
-                                      Grid.Row="3"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="InitialSpellSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="0"
-                                       Text="Start:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <StackPanel Grid.Row="4"
-                                        Grid.Column="1"
-                                        Orientation="Horizontal"
-                                        Margin="0,0,0,8">
-                                <TextBox x:Name="StartXTextBox"
-                                         Width="80"
-                                         Margin="0,0,8,0"
-                                         TextChanged="StartCoordinateTextBox_TextChanged" />
-                                <TextBox x:Name="StartYTextBox"
-                                         Width="80"
-                                         TextChanged="StartCoordinateTextBox_TextChanged" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Separator Margin="0,12,0,12" />
-
-                        <TextBlock Text="Sphere Data"
-                                   Style="{StaticResource SectionHeaderStyle}" />
-
-                        <StackPanel Margin="0,4,0,0">
+                
+                <ScrollViewer Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Border Padding="12"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <StackPanel>
+                            <TextBlock Text="SphereBoard / Sphere"
+                                       Style="{StaticResource SectionHeaderStyle}" />
                             <StackPanel Orientation="Horizontal"
-                                        Margin="0,0,0,8">
-                                <Button Content="Add"
-                                        Width="80"
-                                        Margin="0,0,8,0"
-                                        Click="SphereModeAdd_Click" />
-                                <Button Content="Remove"
-                                        Width="80"
-                                        Margin="0,0,8,0"
-                                        Click="SphereModeRemove_Click" />
-                                <Button Content="Select"
-                                        Width="80"
-                                        Click="SphereModeSelect_Click" />
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="Sphere Board:"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="SphereBoardSelector"
+                                          Width="180"
+                                          HorizontalAlignment="Left"
+                                          SelectionChanged="SphereBoardSelector_SelectionChanged" />
                             </StackPanel>
 
-                            <Grid>
+                            <Separator Margin="0,12,0,12" />
+
+                            <TextBlock Text="Sphere Board Data"
+                                       Style="{StaticResource SectionHeaderStyle}" />
+
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Text="Breed:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="BreedSelector"
+                                          Grid.Row="0"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="BreedSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="0"
+                                           Text="Initial Spell 1:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="InitialSpell1Selector"
+                                          Grid.Row="1"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Text="Initial Spell 2:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="InitialSpell2Selector"
+                                          Grid.Row="2"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="3"
+                                           Grid.Column="0"
+                                           Text="Initial Spell 3:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="InitialSpell3Selector"
+                                          Grid.Row="3"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="InitialSpellSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="4"
+                                           Grid.Column="0"
+                                           Text="Start:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <StackPanel Grid.Row="4"
+                                            Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Margin="0,0,0,8">
+                                    <TextBox x:Name="StartXTextBox"
+                                             Width="80"
+                                             Margin="0,0,8,0"
+                                             TextChanged="StartCoordinateTextBox_TextChanged" />
+                                    <TextBox x:Name="StartYTextBox"
+                                             Width="80"
+                                             TextChanged="StartCoordinateTextBox_TextChanged" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Margin="0,12,0,12" />
+
+                            <TextBlock Text="Sphere Data"
+                                       Style="{StaticResource SectionHeaderStyle}" />
+
+                            <StackPanel Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,0,8">
+                                    <RadioButton Content="Add"
+                                                 Width="80"
+                                                 Margin="0,0,8,0"
+                                                 GroupName="SphereEditionMode"
+                                                 Click="SphereModeAdd_Click" />
+                                    <RadioButton Content="Remove"
+                                                 Width="80"
+                                                 Margin="0,0,8,0"
+                                                 GroupName="SphereEditionMode"
+                                                 Click="SphereModeRemove_Click" />
+                                    <RadioButton Content="Select"
+                                                 Width="80"
+                                                 GroupName="SphereEditionMode"
+                                                 IsChecked="True"
+                                                 Click="SphereModeSelect_Click" />
+                                </StackPanel>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="XP:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <TextBox x:Name="SphereXpNumberTextBox"
+                                             Grid.Row="0"
+                                             Grid.Column="1"
+                                             Margin="0,0,0,8"
+                                             TextChanged="SphereValueTextBox_TextChanged" />
+
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="0"
+                                               Text="Spell:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <ComboBox x:Name="SphereSpellSelector"
+                                              Grid.Row="1"
+                                              Grid.Column="1"
+                                              Margin="0,0,0,8"
+                                              DisplayMemberPath="Name"
+                                              SelectedValuePath="Id"
+                                              SelectionChanged="SphereSpellSelector_SelectionChanged" />
+                                    
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="Fighter cards:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <TextBox x:Name="SphereFighterCardListIdTextBox"
+                                             Grid.Row="2"
+                                             Grid.Column="1"
+                                             Margin="0,0,0,8"
+                                             TextChanged="SphereValueTextBox_TextChanged" />
+
+                                    <TextBlock Grid.Row="3"
+                                               Grid.Column="0"
+                                               Text="TP position:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <StackPanel Grid.Row="3"
+                                                Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Margin="0,0,0,8">
+                                        <TextBox x:Name="SphereTeleportXTextBox"
+                                                 Width="80"
+                                                 Margin="0,0,8,0"
+                                                 TextChanged="SphereValueTextBox_TextChanged" />
+                                        <TextBox x:Name="SphereTeleportYTextBox"
+                                                 Width="80"
+                                                 TextChanged="SphereValueTextBox_TextChanged" />
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Row="4"
+                                               Grid.Column="0"
+                                               Text="Position:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <StackPanel Grid.Row="4"
+                                                Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Margin="0,0,0,8">
+                                        <TextBox x:Name="SphereXPositionTextBox"
+                                                 Width="80"
+                                                 Margin="0,0,8,0"
+                                                 IsReadOnly="True" />
+                                        <TextBox x:Name="SphereYPositionTextBox"
+                                                 Width="80"
+                                                 IsReadOnly="True" />
+                                    </StackPanel>
+                                    
+                                    <TextBlock Grid.Row="5"
+                                               Grid.Column="0"
+                                               Text="Impassable:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <CheckBox x:Name="SphereImpassableCheckBox"
+                                              Grid.Row="5"
+                                              Grid.Column="1"
+                                              Margin="0,0,0,8"
+                                              HorizontalAlignment="Left"
+                                              Checked="SphereImpassableCheckBox_Changed"
+                                              Unchecked="SphereImpassableCheckBox_Changed" />
+                                    
+                                    <TextBlock Grid.Row="6"
+                                               Grid.Column="0"
+                                               Text="Effects:"
+                                               VerticalAlignment="Center"
+                                               Opacity="0.7"
+                                               Margin="0,0,8,8" />
+                                    <StackPanel Grid.Row="7"
+                                                Grid.Column="0"
+                                                Grid.ColumnSpan="2"
+                                                Orientation="Vertical"
+                                                Margin="0,0,0,8">
+                                        <Button Content="Add"
+                                                Width="80"
+                                                Margin="0,0,8,5"
+                                                Click="EffectAdd_Click" />
+                                        <Button Content="Remove"
+                                                Width="80"
+                                                Click="EffectRemove_Click" />
+                                    </StackPanel>
+                                    <ListBox x:Name="EffectSelector" 
+                                             Grid.Row="7"
+                                             Grid.Column="1"
+                                             Height="160"
+                                             MinWidth="220"
+                                             DisplayMemberPath="ActionTypeName"
+                                             SelectionChanged="EffectSelector_SelectionChanged" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+
+                <ScrollViewer Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Border Padding="12"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <StackPanel>
+                            <TextBlock Text="Effect"
+                                       Style="{StaticResource SectionHeaderStyle}" />
+
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Text="Action:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="ActionIdSelector"
+                                          Grid.Row="0"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="ActionIdSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="0"
+                                           Text="Area shape:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <ComboBox x:Name="AreaShapeSelector"
+                                          Grid.Row="1"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="Id"
+                                          SelectionChanged="AreaShapeSelector_SelectionChanged" />
+
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Text="Trigger self:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <CheckBox x:Name="TargetTriggerSelfCheckBox"
+                                          Grid.Row="2"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          HorizontalAlignment="Left"
+                                          Checked="TargetTriggerSelfCheckBox_Changed"
+                                          Unchecked="TargetTriggerSelfCheckBox_Changed" />
+
+                                <TextBlock Grid.Row="3"
+                                           Grid.Column="0"
+                                           Text="Area size:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <StackPanel Grid.Row="3"
+                                            Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Margin="0,0,0,8">
+                                    <TextBox x:Name="AreaSize0TextBox"
+                                             Width="80"
+                                             Margin="0,0,8,0"
+                                             TextChanged="AreaSizeTextBox_TextChanged" />
+                                    <TextBox x:Name="AreaSize1TextBox"
+                                             Width="80"
+                                             TextChanged="AreaSizeTextBox_TextChanged" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="4"
+                                           Grid.Column="0"
+                                           Text="Duration:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <TextBox x:Name="DurationTextBox"
+                                         Grid.Row="4"
+                                         Grid.Column="1"
+                                         Width="80"
+                                         Margin="0,0,0,8"
+                                         TextChanged="DurationTextBox_TextChanged" />
+
+                                <TextBlock Grid.Row="5"
+                                           Grid.Column="0"
+                                           Text="Trigger duration:"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <CheckBox x:Name="TriggeredWithDurationCheckBox"
+                                          Grid.Row="5"
+                                          Grid.Column="1"
+                                          Margin="0,0,0,8"
+                                          HorizontalAlignment="Left"
+                                          Checked="TriggeredWithDurationCheckBox_Changed"
+                                          Unchecked="TriggeredWithDurationCheckBox_Changed" />
+                            </Grid>
+
+                            <Separator Margin="0,12,0,12" />
+
+                            <TextBlock Text="List values"
+                                       Style="{StaticResource SectionHeaderStyle}" />
+
+                            <Grid Margin="0,4,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="110" />
                                     <ColumnDefinition Width="*" />
@@ -236,241 +499,230 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="0"
-                                           Text="XP:"
-                                           VerticalAlignment="Center"
+                                           Text="Params:"
+                                           VerticalAlignment="Top"
                                            Opacity="0.7"
                                            Margin="0,0,8,8" />
-                                <TextBox x:Name="SphereXpNumberTextBox"
-                                         Grid.Row="0"
-                                         Grid.Column="1"
-                                         Margin="0,0,0,8"
-                                         TextChanged="SphereValueTextBox_TextChanged" />
+                                <StackPanel Grid.Row="1"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
+                                            Margin="0,0,0,8">
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectParamAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectParamRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1"
+                                            Grid.Column="1"
+                                            Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectParamsListBox"
+                                             Height="90"
+                                             MinWidth="220" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,6,0,0">
+                                        <TextBox x:Name="EffectParamNewValueTextBox"
+                                                 Width="110"
+                                                 Margin="0,0,8,0" />
+                                    </StackPanel>
+                                </StackPanel>
 
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="0"
-                                           Text="Spell:"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                           Margin="0,0,8,8" />
-                                <ComboBox x:Name="SphereSpellSelector"
-                                          Grid.Row="1"
-                                          Grid.Column="1"
-                                          Margin="0,0,0,8"
-                                          DisplayMemberPath="Name"
-                                          SelectedValuePath="Id"
-                                          SelectionChanged="SphereSpellSelector_SelectionChanged" />
-                                
                                 <TextBlock Grid.Row="2"
                                            Grid.Column="0"
-                                           Text="Fighter cards:"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                           Margin="0,0,8,8" />
-                                <TextBox x:Name="SphereFighterCardListIdTextBox"
-                                         Grid.Row="2"
-                                         Grid.Column="1"
-                                         Margin="0,0,0,8"
-                                         TextChanged="SphereValueTextBox_TextChanged" />
-
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="0"
-                                           Text="TP position:"
-                                           VerticalAlignment="Center"
+                                           Text="Triggers before:"
+                                           VerticalAlignment="Top"
                                            Opacity="0.7"
                                            Margin="0,0,8,8" />
                                 <StackPanel Grid.Row="3"
-                                            Grid.Column="1"
-                                            Orientation="Horizontal"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
                                             Margin="0,0,0,8">
-                                    <TextBox x:Name="SphereTeleportXTextBox"
-                                             Width="80"
-                                             Margin="0,0,8,0"
-                                             TextChanged="SphereValueTextBox_TextChanged" />
-                                    <TextBox x:Name="SphereTeleportYTextBox"
-                                             Width="80"
-                                             TextChanged="SphereValueTextBox_TextChanged" />
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectTriggerBeforeAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectTriggerBeforeRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3"
+                                            Grid.Column="1"
+                                            Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectTriggersBeforeListBox"
+                                             Height="90"
+                                             MinWidth="220"
+                                             DisplayMemberPath="Name" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,6,0,0">
+                                        <ComboBox x:Name="EffectTriggerBeforeSelector"
+                                                  Width="160"
+                                                  Margin="0,0,8,0"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id" />
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <TextBlock Grid.Row="4"
                                            Grid.Column="0"
-                                           Text="Position:"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                           Margin="0,0,8,8" />
-                                <StackPanel Grid.Row="4"
-                                            Grid.Column="1"
-                                            Orientation="Horizontal"
-                                            Margin="0,0,0,8">
-                                    <TextBox x:Name="SphereXPositionTextBox"
-                                             Width="80"
-                                             Margin="0,0,8,0"
-                                             IsReadOnly="True" />
-                                    <TextBox x:Name="SphereYPositionTextBox"
-                                             Width="80"
-                                             IsReadOnly="True" />
-                                </StackPanel>
-                                
-                                <TextBlock Grid.Row="5"
-                                           Grid.Column="0"
-                                           Text="Impassable:"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.7"
-                                           Margin="0,0,8,8" />
-                                <CheckBox x:Name="SphereImpassableCheckBox"
-                                          Grid.Row="5"
-                                          Grid.Column="1"
-                                          Margin="0,0,0,8"
-                                          HorizontalAlignment="Left"
-                                          Checked="SphereImpassableCheckBox_Changed"
-                                          Unchecked="SphereImpassableCheckBox_Changed" />
-                                
-                                <TextBlock Grid.Row="6"
-                                           Grid.Column="0"
-                                           Text="Effects:"
+                                           Text="Triggers after:"
                                            VerticalAlignment="Top"
                                            Opacity="0.7"
                                            Margin="0,0,8,8" />
-                                <StackPanel Grid.Row="6"
+                                <StackPanel Grid.Row="5"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
+                                            Margin="0,0,0,8">
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectTriggerAfterAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectTriggerAfterRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="5"
                                             Grid.Column="1"
                                             Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectTriggersAfterListBox"
+                                             Height="90"
+                                             MinWidth="220"
+                                             DisplayMemberPath="Name" />
                                     <StackPanel Orientation="Horizontal"
-                                                Margin="0,0,0,8">
-                                        <Button Content="Add Effect"
-                                                Width="100"
-                                                Margin="0,0,8,0"
-                                                Click="EffectAdd_Click" />
-                                        <Button Content="Remove Effect"
-                                                Width="110"
-                                                Click="EffectRemove_Click" />
+                                                Margin="0,6,0,0">
+                                        <ComboBox x:Name="EffectTriggerAfterSelector"
+                                                  Width="160"
+                                                  Margin="0,0,8,0"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id" />
                                     </StackPanel>
+                                </StackPanel>
 
-                                    <ListBox x:Name="EffectSelector"
-                                             Height="160"
-                                             DisplayMemberPath="ActionTypeName"
-                                             SelectionChanged="EffectSelector_SelectionChanged" />
+                                <TextBlock Grid.Row="6"
+                                           Grid.Column="0"
+                                           Text="End triggers:"
+                                           VerticalAlignment="Top"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <StackPanel Grid.Row="7"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
+                                            Margin="0,0,0,8">
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectEndTriggerAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectEndTriggerRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="7"
+                                            Grid.Column="1"
+                                            Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectEndTriggersListBox"
+                                             Height="90"
+                                             MinWidth="220"
+                                             DisplayMemberPath="Name" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,6,0,0">
+                                        <ComboBox x:Name="EffectEndTriggerSelector"
+                                                  Width="160"
+                                                  Margin="0,0,8,0"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="8"
+                                           Grid.Column="0"
+                                           Text="Server triggers:"
+                                           VerticalAlignment="Top"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <StackPanel Grid.Row="9"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
+                                            Margin="0,0,0,8">
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectServerSideTriggerAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectServerSideTriggerRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="9"
+                                            Grid.Column="1"
+                                            Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectServerSideTriggersListBox"
+                                             Height="90"
+                                             MinWidth="220"
+                                             DisplayMemberPath="Name" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,6,0,0">
+                                        <ComboBox x:Name="EffectServerSideTriggerSelector"
+                                                  Width="160"
+                                                  Margin="0,0,8,0"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="10"
+                                           Grid.Column="0"
+                                           Text="Targets:"
+                                           VerticalAlignment="Top"
+                                           Opacity="0.7"
+                                           Margin="0,0,8,8" />
+                                <StackPanel Grid.Row="11"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Orientation="Vertical"
+                                            Margin="0,0,0,8">
+                                    <Button Content="Add"
+                                            Width="80"
+                                            Margin="0,0,8,5"
+                                            Click="EffectTargetAdd_Click" />
+                                    <Button Content="Remove"
+                                            Width="80"
+                                            Click="EffectTargetRemove_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="11"
+                                            Grid.Column="1"
+                                            Margin="0,0,0,8">
+                                    <ListBox x:Name="EffectTargetsListBox"
+                                             Height="90"
+                                             MinWidth="220"
+                                             DisplayMemberPath="Name" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,6,0,0">
+                                        <ComboBox x:Name="EffectTargetSelector"
+                                                  Width="160"
+                                                  Margin="0,0,8,0"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2"
-                        Padding="12"
-                        BorderThickness="1"
-                        CornerRadius="4">
-                    <StackPanel>
-                        <TextBlock Text="Effect"
-                                   Style="{StaticResource SectionHeaderStyle}" />
-
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="140" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="0"
-                                       Text="Action:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="ActionIdSelector"
-                                      Grid.Row="0"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="ActionIdSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="1"
-                                       Grid.Column="0"
-                                       Text="Area shape:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <ComboBox x:Name="AreaShapeSelector"
-                                      Grid.Row="1"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      DisplayMemberPath="Name"
-                                      SelectedValuePath="Id"
-                                      SelectionChanged="AreaShapeSelector_SelectionChanged" />
-
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Text="Trigger self:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <CheckBox x:Name="TargetTriggerSelfCheckBox"
-                                      Grid.Row="2"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      HorizontalAlignment="Left"
-                                      Checked="TargetTriggerSelfCheckBox_Changed"
-                                      Unchecked="TargetTriggerSelfCheckBox_Changed" />
-
-                            <TextBlock Grid.Row="3"
-                                       Grid.Column="0"
-                                       Text="Area size:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <StackPanel Grid.Row="3"
-                                        Grid.Column="1"
-                                        Orientation="Horizontal"
-                                        Margin="0,0,0,8">
-                                <TextBox x:Name="AreaSize0TextBox"
-                                         Width="80"
-                                         Margin="0,0,8,0"
-                                         TextChanged="AreaSizeTextBox_TextChanged" />
-                                <TextBox x:Name="AreaSize1TextBox"
-                                         Width="80"
-                                         TextChanged="AreaSizeTextBox_TextChanged" />
-                            </StackPanel>
-
-                            <TextBlock Grid.Row="4"
-                                       Grid.Column="0"
-                                       Text="Duration:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <TextBox x:Name="DurationTextBox"
-                                     Grid.Row="4"
-                                     Grid.Column="1"
-                                     Width="80"
-                                     Margin="0,0,0,8"
-                                     TextChanged="DurationTextBox_TextChanged" />
-
-                            <TextBlock Grid.Row="5"
-                                       Grid.Column="0"
-                                       Text="Trigger duration:"
-                                       VerticalAlignment="Center"
-                                       Opacity="0.7"
-                                       Margin="0,0,8,8" />
-                            <CheckBox x:Name="TriggeredWithDurationCheckBox"
-                                      Grid.Row="5"
-                                      Grid.Column="1"
-                                      Margin="0,0,0,8"
-                                      HorizontalAlignment="Left"
-                                      Checked="TriggeredWithDurationCheckBox_Changed"
-                                      Unchecked="TriggeredWithDurationCheckBox_Changed" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
+                    </Border>
+                </ScrollViewer>
+                
             </Grid>
         </Grid>
     </DockPanel>
