@@ -19,11 +19,8 @@ using ListBox = System.Windows.Controls.ListBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Panel = System.Windows.Controls.Panel;
 using Point = System.Windows.Point;
-using TextBox = System.Windows.Controls.TextBox;
 using SharpImage = SixLabors.ImageSharp.Image;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace SkillTreeEditor;
 
@@ -98,33 +95,16 @@ public partial class MainWindow : Window
 
         return IntPtr.Zero;
     }
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed)
-            DragMove();
-    }
-
-    private void Minimize_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
-
-    private void Maximize_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
-    }
-
-    private void Close_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
     
     private void New_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Create a new project/document
+        _selectedSphereBoard = App.CreateSphereBoard();
+        _selectedSphere = null;
+        _selectedEffect = null;
+        RefreshSphereBoardSelector();
+        UpdateSphereControlsFromSelectedSphere();
+        UpdateEffectControlsFromSelectedEffect();
+        DrawSphereBoard();
     }
 
     private void Open_Click(object sender, RoutedEventArgs e)
@@ -169,7 +149,7 @@ public partial class MainWindow : Window
 
     private void SkillTreeCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (_sphereEditionMode != EditorMode.Select || _selectedSphereBoard is null)
+        if (_selectedSphereBoard is null)
             return;
 
         var position = e.GetPosition(SkillTreeCanvas);
@@ -177,20 +157,18 @@ public partial class MainWindow : Window
         var clickedX = (int)(position.X / TileSize);
         var clickedY = (int)((SkillTreeCanvas.Height - position.Y) / TileSize) + 1;
 
-        var clickedSphere = App.Spheres.FirstOrDefault(sphere =>
-            sphere.SphereBoardId == _selectedSphereBoard.Id &&
-            sphere.XPosition == clickedX &&
-            sphere.YPosition == clickedY);
-
-        if (clickedSphere is null)
-            return;
-        
-        SetSelectedSphere(clickedSphere);
-        DrawSphereBoard();
-        DrawTile(clickedX, clickedY, Brushes.Chartreuse);
-        
-        if (clickedSphere.TeleportXPosition != 0 || clickedSphere.TeleportYPosition != 0)
-            DrawTeleportLine(clickedSphere);
+        switch(_sphereEditionMode)
+        {
+            case EditorMode.Add:
+                AddSphere(clickedX, clickedY);
+                break;
+            case EditorMode.Remove:
+                RemoveSphere(clickedX, clickedY);
+                break;
+            case EditorMode.Select:
+                SelectSphere(clickedX, clickedY);
+                break;
+        }
         
         e.Handled = true;
     }
@@ -560,6 +538,48 @@ public partial class MainWindow : Window
         AddEnumEffectListItem(EffectTargetSelector, effect => effect.Targets);
     }
 
+    private void AddSphere(int x, int y)
+    {
+        if (_selectedSphereBoard is null)
+            return;
+
+        var sphere = App.CreateSphere(x, y, _selectedSphereBoard.Id);
+        App.Spheres.Add(sphere);
+        SetSelectedSphere(sphere);
+        DrawSphereBoard();
+    }
+
+    private void RemoveSphere(int x, int y)
+    {
+        if (_selectedSphereBoard is null)
+            return;
+        
+        App.RemoveSphere(x, y, _selectedSphereBoard.Id);
+        _selectedSphere = null;
+        DrawSphereBoard();
+    }
+
+    private void SelectSphere(int x, int y)
+    {
+        if (_selectedSphereBoard is null)
+            return;
+        
+        var clickedSphere = App.Spheres.FirstOrDefault(sphere =>
+            sphere.SphereBoardId == _selectedSphereBoard.Id &&
+            sphere.XPosition == x &&
+            sphere.YPosition == y);
+
+        if (clickedSphere is null)
+            return;
+        
+        SetSelectedSphere(clickedSphere);
+        DrawSphereBoard();
+        DrawTile(x, y, Brushes.Chartreuse);
+        
+        if (clickedSphere.TeleportXPosition != 0 || clickedSphere.TeleportYPosition != 0)
+            DrawTeleportLine(clickedSphere);
+    }
+
     private void EffectTargetRemove_Click(object sender, RoutedEventArgs e)
     {
         RemoveEffectListItem(EffectTargetsListBox, _selectedEffect?.Targets);
@@ -694,18 +714,6 @@ public partial class MainWindow : Window
         {
             _isUpdatingEffectControls = false;
         }
-    }
-
-    private void AddIntEffectListItem(TextBox input, Func<EffectData, List<int>> listSelector)
-    {
-        if (_selectedEffect is null || _isUpdatingEffectControls)
-            return;
-
-        if (!int.TryParse(input.Text, out var value))
-            return;
-
-        listSelector(_selectedEffect).Add(value);
-        UpdateEffectControlsFromSelectedEffect();
     }
 
     private void RemoveEffectListItem<T>(ListBox listBox, List<T>? items)
