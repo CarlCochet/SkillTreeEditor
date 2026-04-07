@@ -9,4 +9,12 @@
         <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
 
+    <ItemGroup>
+        <Resource Include="Assets\Spheres\*.tga" />
+        <Resource Include="Assets\Path\*.tga" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    </ItemGroup>
 </Project>

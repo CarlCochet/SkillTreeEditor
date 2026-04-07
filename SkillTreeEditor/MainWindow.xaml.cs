@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -13,20 +14,28 @@ using SkillTreeEditor.Enums;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
 using ComboBox = System.Windows.Controls.ComboBox;
+using Image = System.Windows.Controls.Image;
 using ListBox = System.Windows.Controls.ListBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Panel = System.Windows.Controls.Panel;
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
+using SharpImage = SixLabors.ImageSharp.Image;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace SkillTreeEditor;
 
 public partial class MainWindow : Window
 {
-    private sealed record EnumItem(int Id, string Name);
+    
     
     private const double PanThreshold = 3.0;
-    
+    private const double TileSize = 40.0;
     private readonly double[] _zoomSteps = [ 0.1, 0.2, 0.4, 0.8, 1.6, 3.2 ];
+    
+    private Dictionary<int, ImageSource> _images = new();
     private int _currentZoomStepIndex = 1;
     private bool _isPanning;
     private bool _isUpdatingSphereBoardControls;
@@ -54,6 +63,7 @@ public partial class MainWindow : Window
 
     private void InitWidgets()
     {
+        LoadImages();
         RefreshSphereBoardSelector();
         LoadBreedSelector();
         RefreshSpellSelectors(0);
@@ -159,6 +169,30 @@ public partial class MainWindow : Window
 
     private void SkillTreeCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (_sphereEditionMode != EditorMode.Select || _selectedSphereBoard is null)
+            return;
+
+        var position = e.GetPosition(SkillTreeCanvas);
+
+        var clickedX = (int)(position.X / TileSize);
+        var clickedY = (int)((SkillTreeCanvas.Height - position.Y) / TileSize) + 1;
+
+        var clickedSphere = App.Spheres.FirstOrDefault(sphere =>
+            sphere.SphereBoardId == _selectedSphereBoard.Id &&
+            sphere.XPosition == clickedX &&
+            sphere.YPosition == clickedY);
+
+        if (clickedSphere is null)
+            return;
+        
+        SetSelectedSphere(clickedSphere);
+        DrawSphereBoard();
+        DrawTile(clickedX, clickedY, Brushes.Chartreuse);
+        
+        if (clickedSphere.TeleportXPosition != 0 || clickedSphere.TeleportYPosition != 0)
+            DrawTeleportLine(clickedSphere);
+        
+        e.Handled = true;
     }
 
     private void SkillTreeCanvas_MouseMove(object sender, MouseEventArgs e)
@@ -437,8 +471,8 @@ public partial class MainWindow : Window
 
         _selectedEffect.AreaSize =
         [
-            Parsing.ParseIntOrDefault(AreaSize0TextBox.Text),
-            Parsing.ParseIntOrDefault(AreaSize1TextBox.Text)
+            Helper.ParseIntOrDefault(AreaSize0TextBox.Text),
+            Helper.ParseIntOrDefault(AreaSize1TextBox.Text)
         ];
     }
 
@@ -449,7 +483,7 @@ public partial class MainWindow : Window
 
         _selectedEffect.Duration =
         [
-            Parsing.ParseIntOrDefault(DurationTextBox.Text),
+            Helper.ParseIntOrDefault(DurationTextBox.Text),
             0
         ];
     }
@@ -587,6 +621,7 @@ public partial class MainWindow : Window
                 SphereTeleportYTextBox.Text = string.Empty;
                 SphereXPositionTextBox.Text = string.Empty;
                 SphereYPositionTextBox.Text = string.Empty;
+                SphereFighterCardListIdTextBox.Text = string.Empty;
                 SphereSpellSelector.SelectedIndex = -1;
                 SphereImpassableCheckBox.IsChecked = false;
                 EffectSelector.ItemsSource = null;
@@ -606,6 +641,7 @@ public partial class MainWindow : Window
             SphereTeleportYTextBox.Text = _selectedSphere.TeleportYPosition.ToString();
             SphereXPositionTextBox.Text = _selectedSphere.XPosition.ToString();
             SphereYPositionTextBox.Text = _selectedSphere.YPosition.ToString();
+            SphereFighterCardListIdTextBox.Text = _selectedSphere.FighterCardListId.ToString();
             SphereSpellSelector.SelectedValue = _selectedSphere.SpellId;
             SphereImpassableCheckBox.IsChecked = _selectedSphere.Impassable;
             RefreshEffectSelector();
@@ -648,11 +684,11 @@ public partial class MainWindow : Window
             TriggeredWithDurationCheckBox.IsChecked = _selectedEffect.TriggeredWithDuration;
             
             EffectParamsListBox.ItemsSource = _selectedEffect.Params.ToList();
-            EffectTriggersBeforeListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.TriggersBefore);
-            EffectTriggersAfterListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.TriggersAfter);
-            EffectEndTriggersListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.EndTriggers);
-            EffectServerSideTriggersListBox.ItemsSource = CreateEnumItems<TriggerType>(_selectedEffect.ServerSideTriggers);
-            EffectTargetsListBox.ItemsSource = CreateEnumItems<TargetType>(_selectedEffect.Targets);
+            EffectTriggersBeforeListBox.ItemsSource = Helper.CreateEnumItems<TriggerType>(_selectedEffect.TriggersBefore);
+            EffectTriggersAfterListBox.ItemsSource = Helper.CreateEnumItems<TriggerType>(_selectedEffect.TriggersAfter);
+            EffectEndTriggersListBox.ItemsSource = Helper.CreateEnumItems<TriggerType>(_selectedEffect.EndTriggers);
+            EffectServerSideTriggersListBox.ItemsSource = Helper.CreateEnumItems<TriggerType>(_selectedEffect.ServerSideTriggers);
+            EffectTargetsListBox.ItemsSource = Helper.CreateEnumItems<TargetType>(_selectedEffect.Targets);
         }
         finally
         {
@@ -696,15 +732,19 @@ public partial class MainWindow : Window
         UpdateEffectControlsFromSelectedEffect();
     }
     
-    private static List<EnumItem> CreateEnumItems<TEnum>(IEnumerable<int> values)
-        where TEnum : struct, Enum
+    private void AddEnumEffectListItem(ComboBox comboBox, Func<EffectData, List<long>> listSelector)
     {
-        return values
-            .Select(value => new EnumItem(value, Enum.IsDefined(typeof(TEnum), value)
-                ? ((TEnum)(object)value).ToString()
-                : $"Unknown ({value})"))
-            .ToList();
+        if (_selectedEffect is null || _isUpdatingEffectControls)
+            return;
+
+        if (comboBox.SelectedValue is not int value)
+            return;
+
+        listSelector(_selectedEffect).Add(value);
+        UpdateEffectControlsFromSelectedEffect();
     }
+    
+    
     
     private void SetCanvasTranslation(double x, double y)
     {
@@ -745,6 +785,16 @@ public partial class MainWindow : Window
         SetCanvasTranslation(0, 0);
     }
 
+    private void LoadImages()
+    {
+        _images.Clear();
+
+        foreach (var imageId in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 30, 31, 32, 33, 34, 50 })
+        {
+            _images[imageId] = LoadSphereIconSource(imageId);
+        }
+    }
+
     private void RefreshSphereBoardSelector()
     {
         SphereBoardSelector.ItemsSource = App.SphereBoards.Select(board => board.Id).ToList();
@@ -756,7 +806,7 @@ public partial class MainWindow : Window
     private void LoadBreedSelector()
     {
         BreedSelector.ItemsSource = Enum.GetValues<Breeds>()
-            .Select(breed => new EnumItem((int)breed, breed.ToString()))
+            .Select(breed => new Helper.EnumItem((int)breed, breed.ToString()))
             .ToList();
     }
 
@@ -764,7 +814,7 @@ public partial class MainWindow : Window
     {
         var items = App.SpellCards
             .Where(spell => (int)spell.Category == breedId)
-            .Select(spell => new EnumItem(spell.Id, spell.Name))
+            .Select(spell => new Helper.EnumItem(spell.Id, spell.Name))
             .OrderBy(spell => spell.Name)
             .ToList();
         
@@ -777,7 +827,7 @@ public partial class MainWindow : Window
     private void LoadActionSelector()
     {
         ActionIdSelector.ItemsSource = Enum.GetValues<ActionType>()
-            .Select(actionType => new EnumItem((int)actionType, actionType.ToString()))
+            .Select(actionType => new Helper.EnumItem((int)actionType, actionType.ToString()))
             .OrderBy(item => item.Name)
             .ToList();
     }
@@ -785,7 +835,7 @@ public partial class MainWindow : Window
     private void LoadAreaShapeSelector()
     {
         AreaShapeSelector.ItemsSource = Enum.GetValues<AreaShape>()
-            .Select(areaShape => new EnumItem((int)areaShape, areaShape.ToString()))
+            .Select(areaShape => new Helper.EnumItem((int)areaShape, areaShape.ToString()))
             .OrderBy(item => item.Name)
             .ToList();
     }
@@ -793,7 +843,7 @@ public partial class MainWindow : Window
     private void LoadTriggerSelectors()
     {
         var items = Enum.GetValues<TriggerType>()
-            .Select(triggerType => new EnumItem((int)triggerType, triggerType.ToString()))
+            .Select(triggerType => new Helper.EnumItem((int)triggerType, triggerType.ToString()))
             .OrderBy(item => item.Name)
             .ToList();
         
@@ -806,7 +856,7 @@ public partial class MainWindow : Window
     private void LoadTargetSelector()
     {
         EffectTargetSelector.ItemsSource = Enum.GetValues<TargetType>()
-            .Select(targetType => new EnumItem((int)targetType, targetType.ToString()))
+            .Select(targetType => new Helper.EnumItem((int)targetType, targetType.ToString()))
             .OrderBy(item => item.Name)
             .ToList();
     }
@@ -826,31 +876,95 @@ public partial class MainWindow : Window
         {
             if (sphere.SphereBoardId != _selectedSphereBoard.Id)
                 continue;
-
-            var color = sphere.Impassable
-                ? Brushes.Red
-                : sphere.Effects.Count > 0
-                    ? Brushes.Blue
-                    : Brushes.White;
             
-            DrawTile(sphere.XPosition, sphere.YPosition, color);
+            DrawTile(sphere.XPosition, sphere.YPosition, Brushes.BurlyWood);
+            var iconId = Helper.GetIconIdFromSphere(sphere);
+            
+            if (_images.TryGetValue(iconId, out var icon))
+                DrawIcon(sphere.XPosition, sphere.YPosition, icon);
         }
         
-        DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Green);
+        DrawIcon(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, _images[33]);
+    }
+    
+    private void DrawTeleportLine(SphereData sphere)
+    {
+        var line = new Line
+        {
+            X1 = sphere.XPosition * TileSize + TileSize / 2,
+            Y1 = SkillTreeCanvas.Height - (sphere.YPosition - 1) * TileSize - TileSize / 2,
+            X2 = sphere.TeleportXPosition * TileSize + TileSize / 2,
+            Y2 = SkillTreeCanvas.Height - (sphere.TeleportYPosition - 1) * TileSize - TileSize / 2,
+            Stroke = Brushes.DeepSkyBlue,
+            StrokeThickness = 5,
+            SnapsToDevicePixels = true,
+            IsHitTestVisible = false
+        };
+
+        Panel.SetZIndex(line, 1000);
+        SkillTreeCanvas.Children.Add(line);
     }
 
     private void DrawTile(int x, int y, SolidColorBrush brush)
     {
         var tile = new Border
         {
-            Width = 40,
-            Height = 40,
+            Width = TileSize,
+            Height = TileSize,
             Background = brush,
             BorderBrush = Brushes.Transparent
         };
 
-        Canvas.SetLeft(tile, x * 40);
-        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * 40);
+        Canvas.SetLeft(tile, x * TileSize);
+        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
         SkillTreeCanvas.Children.Add(tile);
+    }
+
+    private void DrawIcon(int x, int y, ImageSource icon)
+    {
+        var tile = new Image
+        {
+            Width = TileSize,
+            Height = TileSize,
+            Source = icon,
+            Stretch = Stretch.Fill,
+            SnapsToDevicePixels = true,
+            IsHitTestVisible = false
+        };
+
+        Canvas.SetLeft(tile, x * TileSize);
+        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
+        SkillTreeCanvas.Children.Add(tile);
+    }
+    
+    private static ImageSource LoadSphereIconSource(int imageId)
+    {
+        var uri = new Uri($"pack://application:,,,/Assets/Spheres/{imageId}.tga", UriKind.Absolute);
+        var streamInfo = Application.GetResourceStream(uri);
+        if (streamInfo?.Stream is null)
+            throw new FileNotFoundException("Sphere icon resource was not found.", uri.ToString());
+
+        using var image = SharpImage.Load<Rgba32>(streamInfo.Stream);
+
+        var pixelData = new byte[image.Width * image.Height * 4];
+        image.CopyPixelDataTo(pixelData);
+        
+        for (var i = 0; i < pixelData.Length; i += 4)
+        {
+            (pixelData[i], pixelData[i + 2]) = (pixelData[i + 2], pixelData[i]);
+        }
+
+        var bitmapSource = BitmapSource.Create(
+            image.Width,
+            image.Height,
+            96,
+            96,
+            PixelFormats.Bgra32,
+            null,
+            pixelData,
+            image.Width * 4);
+
+        bitmapSource.Freeze();
+        return bitmapSource;
     }
 }

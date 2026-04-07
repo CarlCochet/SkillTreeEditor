@@ -20,7 +20,7 @@ public class EffectData
     [JsonPropertyName("serverSideTriggers")] public List<int> ServerSideTriggers { get; set; } = [];
     [JsonPropertyName("areaSize")] public List<int> AreaSize { get; set; } = [];
     [JsonPropertyName("duration")] public List<int> Duration { get; set; } = [];
-    [JsonPropertyName("targets")] public List<int> Targets { get; set; } = [];
+    [JsonPropertyName("targets")] public List<long> Targets { get; set; } = [];
     [JsonPropertyName("triggeredWithDuration")] public bool TriggeredWithDuration { get; set; }
     [JsonPropertyName("appliedIfTargetValid")] public bool AppliedIfTargetValid { get; set; }
     [JsonPropertyName("critical")] public bool Critical { get; set; }
