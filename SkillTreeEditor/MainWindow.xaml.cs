@@ -92,7 +92,6 @@ public partial class MainWindow : Window
             WindowsApi.WmGetMinMaxInfo(hwnd, lParam);
             handled = true;
         }
-
         return IntPtr.Zero;
     }
     
@@ -126,6 +125,13 @@ public partial class MainWindow : Window
         
         _selectedSphereBoard = App.SphereBoards[0];
         DrawSphereBoard();
+
+        foreach (var sphereBoard in App.SphereBoards)
+        {
+            var breed = App.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
+            var fighter = new Fighter(sphereBoard.Id, App.Spheres, breed);
+            App.Fighters.Add(sphereBoard.Id, fighter);
+        }
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -378,7 +384,7 @@ public partial class MainWindow : Window
     
     private void EffectAdd_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedSphere is null)
+        if (_selectedSphereBoard is null || _selectedSphere is null)
             return;
 
         var effect = new EffectData
@@ -390,11 +396,12 @@ public partial class MainWindow : Window
         _selectedSphere.Effects.Add(effect);
         RefreshEffectSelector();
         SetSelectedEffect(effect);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
     }
 
     private void EffectRemove_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedSphere is null || _selectedEffect is null)
+        if (_selectedSphereBoard is null || _selectedSphere is null || _selectedEffect is null)
             return;
 
         var index = _selectedSphere.Effects.IndexOf(_selectedEffect);
@@ -406,6 +413,7 @@ public partial class MainWindow : Window
 
         var nextIndex = Math.Min(index, _selectedSphere.Effects.Count - 1);
         SetSelectedEffect(nextIndex >= 0 ? _selectedSphere.Effects[nextIndex] : null);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
     }
 
     private void EffectSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -418,11 +426,14 @@ public partial class MainWindow : Window
     
     private void ActionIdSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_selectedEffect is null || _isUpdatingEffectControls)
+        if (_selectedSphereBoard is null || _selectedEffect is null || _isUpdatingEffectControls)
             return;
 
         if (ActionIdSelector.SelectedValue is int actionId)
             _selectedEffect.ActionId = actionId;
+        
+        EffectSelector.Items.Refresh();
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
     }
 
     private void AreaShapeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -476,7 +487,7 @@ public partial class MainWindow : Window
     
     private void EffectParamAdd_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedEffect is null || _isUpdatingEffectControls)
+        if (_selectedSphereBoard is null || _selectedEffect is null || _isUpdatingEffectControls)
             return;
 
         if (!double.TryParse(EffectParamNewValueTextBox.Text, out var value))
@@ -484,11 +495,16 @@ public partial class MainWindow : Window
 
         _selectedEffect.Params.Add(value);
         UpdateEffectControlsFromSelectedEffect();
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
     }
 
     private void EffectParamRemove_Click(object sender, RoutedEventArgs e)
     {
+        if (_selectedSphereBoard is null || _isUpdatingEffectControls)
+            return;
+        
         RemoveEffectListItem(EffectParamsListBox, _selectedEffect?.Params);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
     }
 
     private void EffectTriggerBeforeAdd_Click(object sender, RoutedEventArgs e)
@@ -596,7 +612,14 @@ public partial class MainWindow : Window
         _selectedSphere = sphere;
         UpdateSphereControlsFromSelectedSphere();
         RefreshEffectSelector();
-        SetSelectedEffect(null);
+
+        if (_selectedSphere?.Effects.Count > 0)
+        {
+            SetSelectedEffect(_selectedSphere.Effects[0]);
+            EffectSelector.SelectedIndex = 0;
+        }
+        else
+            SetSelectedEffect(null);
     }
     
     private void SetSelectedEffect(EffectData? effect)
@@ -872,6 +895,7 @@ public partial class MainWindow : Window
     private void RefreshEffectSelector()
     {
         EffectSelector.ItemsSource = _selectedSphere?.Effects;
+        EffectSelector.Items.Refresh();
     }
     
     private void DrawSphereBoard()
@@ -887,7 +911,7 @@ public partial class MainWindow : Window
             
             DrawTile(sphere.XPosition, sphere.YPosition, Brushes.BurlyWood);
             var iconId = Helper.GetIconIdFromSphere(sphere);
-            
+
             if (_images.TryGetValue(iconId, out var icon))
                 DrawIcon(sphere.XPosition, sphere.YPosition, icon);
         }

@@ -12,9 +12,12 @@ public partial class App : Application
     public List<SphereBoardData> SphereBoards = [];
     public List<SphereData> Spheres = [];
     public List<SpellData> SpellCards = [];
+    public List<BreedData> Breeds = [];
+    public Dictionary<int, Fighter> Fighters = new();
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
     };
     
     public void LoadProjectFolder(string folderPath)
@@ -46,6 +49,14 @@ public partial class App : Application
             var json = File.ReadAllText(spellPath);
             SpellCards = JsonSerializer.Deserialize<List<SpellData>>(json, _jsonOptions) ?? [];
             Console.WriteLine($"Loaded {SpellCards.Count} spells");
+        }
+
+        var breedPath = Path.Combine(folderPath, "breed_characteristics.json");
+        if (File.Exists(breedPath))
+        {
+            var json = File.ReadAllText(breedPath);
+            Breeds = JsonSerializer.Deserialize<List<BreedData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {Breeds.Count} breeds");
         }
     }
     
