@@ -7,7 +7,10 @@
         mc:Ignorable="d"
         Title="Skill Tree Editor"
         Height="900"
-        Width="1600">
+        Width="1600"
+        Focusable="True"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewKeyUp="Window_PreviewKeyUp">
 
     <Window.Resources>
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
@@ -41,43 +44,67 @@
                     BorderThickness="1"
                     CornerRadius="4"
                     ClipToBounds="True">
-                <Canvas x:Name="SkillTreeCanvas"
-                        Width="4000"
-                        Height="4000"
-                        MouseLeftButtonDown="SkillTreeCanvas_MouseLeftButtonDown"
-                        MouseLeftButtonUp="SkillTreeCanvas_MouseLeftButtonUp"
-                        MouseRightButtonDown="SkillTreeCanvas_OnMouseRightButtonDown"
-                        MouseRightButtonUp="SkillTreeCanvas_OnMouseRightButtonUp"
-                        MouseMove="SkillTreeCanvas_MouseMove"
-                        MouseWheel="SkillTreeCanvas_MouseWheel"
-                        SnapsToDevicePixels="True"
-                        RenderTransformOrigin="0,0">
-                    <Canvas.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform x:Name="SkillTreeCanvasScale" ScaleX="1" ScaleY="1" />
-                            <TranslateTransform x:Name="SkillTreeCanvasTranslate" X="0" Y="0" />
-                        </TransformGroup>
-                    </Canvas.RenderTransform>
-                    <Canvas.Background>
-                        <DrawingBrush TileMode="Tile"
-                                      Viewport="0,0,40,40"
-                                      ViewportUnits="Absolute"
-                                      Viewbox="0,0,40,40"
-                                      ViewboxUnits="Absolute"
-                                      Stretch="None">
-                            <DrawingBrush.Drawing>
-                                <GeometryDrawing Brush="#FF1B1B1B">
-                                    <GeometryDrawing.Pen>
-                                        <Pen Brush="#33FFFFFF" Thickness="1" />
-                                    </GeometryDrawing.Pen>
-                                    <GeometryDrawing.Geometry>
-                                        <RectangleGeometry Rect="0,0,40,40" />
-                                    </GeometryDrawing.Geometry>
-                                </GeometryDrawing>
-                            </DrawingBrush.Drawing>
-                        </DrawingBrush>
-                    </Canvas.Background>
-                </Canvas>
+                <Grid>
+                    <Canvas x:Name="SkillTreeCanvas"
+                            Width="4000"
+                            Height="4000"
+                            MouseLeftButtonDown="SkillTreeCanvas_MouseLeftButtonDown"
+                            MouseLeftButtonUp="SkillTreeCanvas_MouseLeftButtonUp"
+                            MouseRightButtonDown="SkillTreeCanvas_OnMouseRightButtonDown"
+                            MouseRightButtonUp="SkillTreeCanvas_OnMouseRightButtonUp"
+                            MouseMove="SkillTreeCanvas_MouseMove"
+                            MouseWheel="SkillTreeCanvas_MouseWheel"
+                            SnapsToDevicePixels="True"
+                            RenderTransformOrigin="0,0">
+                        <Canvas.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="SkillTreeCanvasScale" ScaleX="1" ScaleY="1" />
+                                <TranslateTransform x:Name="SkillTreeCanvasTranslate" X="0" Y="0" />
+                            </TransformGroup>
+                        </Canvas.RenderTransform>
+                        <Canvas.Background>
+                            <DrawingBrush TileMode="Tile"
+                                          Viewport="0,0,40,40"
+                                          ViewportUnits="Absolute"
+                                          Viewbox="0,0,40,40"
+                                          ViewboxUnits="Absolute"
+                                          Stretch="None">
+                                <DrawingBrush.Drawing>
+                                    <GeometryDrawing Brush="#FF1B1B1B">
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="#33FFFFFF" Thickness="1" />
+                                        </GeometryDrawing.Pen>
+                                        <GeometryDrawing.Geometry>
+                                            <RectangleGeometry Rect="0,0,40,40" />
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </Canvas.Background>
+                    </Canvas>
+
+                    <Border x:Name="FighterStatsPanel"
+                            Width="200"
+                            MaxHeight="500"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="12"
+                            Padding="10"
+                            Background="#AA000000"
+                            BorderBrush="#55FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            IsHitTestVisible="False">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <TextBlock x:Name="FighterStatsText"
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
             </Border>
 
             <!-- Right-side panels -->

@@ -346,70 +346,66 @@ public class Fighter
             if (isValid)
                 _totalSpheres++;
         }
-        
-        PrintStats();
     }
-
-    public void PrintStats()
+    
+    public string GetStatsText()
     {
-        void PrintIfNotZero(string label, int value)
+        var lines = new List<string>
+        {
+            $"Total XP: {_totalXp}",
+            $"Total Spheres: {_totalSpheres}",
+            ""
+        };
+
+        void AddIfNotZero(string label, int value)
         {
             if (value != 0)
-            {
-                Console.WriteLine($"{label}: {value}");
-            }
+                lines.Add($"{label}: {value}");
         }
 
-        Console.WriteLine("-----------------------------------------------------------");
-        Console.WriteLine($"Sphere Board ID: {_sphereBoardId}");
-        Console.WriteLine("-----------------------------------------------------------\n");
-        
-        Console.WriteLine($"Total XP: {_totalXp}");
-        Console.WriteLine($"Total Spheres: {_totalSpheres}\n");
-        
-        PrintIfNotZero("HP", _hp);
-        PrintIfNotZero("AP", _ap);
-        PrintIfNotZero("MP", _mp);
-        PrintIfNotZero("Range", _range);
-        PrintIfNotZero("Init", _init);
+        AddIfNotZero("HP", _hp);
+        AddIfNotZero("AP", _ap);
+        AddIfNotZero("MP", _mp);
+        AddIfNotZero("Range", _range);
+        AddIfNotZero("Init", _init);
 
-        PrintIfNotZero("Res Flat Fire", _resFlatFire);
-        PrintIfNotZero("Res Flat Earth", _resFlatEarth);
-        PrintIfNotZero("Res Flat Water", _resFlatWater);
-        PrintIfNotZero("Res Flat Wind", _resFlatWind);
-        PrintIfNotZero("Res Percent Fire", _resPercentFire);
-        PrintIfNotZero("Res Percent Earth", _resPercentEarth);
-        PrintIfNotZero("Res Percent Water", _resPercentWater);
-        PrintIfNotZero("Res Percent Wind", _resPercentWind);
-        PrintIfNotZero("Res Percent All", _resPercentAll);
-        PrintIfNotZero("Res Area", _resArea);
+        AddIfNotZero("Res Flat Fire", _resFlatFire);
+        AddIfNotZero("Res Flat Earth", _resFlatEarth);
+        AddIfNotZero("Res Flat Water", _resFlatWater);
+        AddIfNotZero("Res Flat Wind", _resFlatWind);
+        AddIfNotZero("Res Percent Fire", _resPercentFire);
+        AddIfNotZero("Res Percent Earth", _resPercentEarth);
+        AddIfNotZero("Res Percent Water", _resPercentWater);
+        AddIfNotZero("Res Percent Wind", _resPercentWind);
+        AddIfNotZero("Res Percent All", _resPercentAll);
+        AddIfNotZero("Res Area", _resArea);
 
-        PrintIfNotZero("Dmg Flat Fire", _dmgFlatFire);
-        PrintIfNotZero("Dmg Flat Earth", _dmgFlatEarth);
-        PrintIfNotZero("Dmg Flat Water", _dmgFlatWater);
-        PrintIfNotZero("Dmg Flat Wind", _dmgFlatWind);
-        PrintIfNotZero("Dmg Percent Fire", _dmgPercentFire);
-        PrintIfNotZero("Dmg Percent Earth", _dmgPercentEarth);
-        PrintIfNotZero("Dmg Percent Water", _dmgPercentWater);
-        PrintIfNotZero("Dmg Percent Wind", _dmgPercentWind);
-        PrintIfNotZero("Dmg Percent All", _dmgPercentAll);
+        AddIfNotZero("Dmg Flat Fire", _dmgFlatFire);
+        AddIfNotZero("Dmg Flat Earth", _dmgFlatEarth);
+        AddIfNotZero("Dmg Flat Water", _dmgFlatWater);
+        AddIfNotZero("Dmg Flat Wind", _dmgFlatWind);
+        AddIfNotZero("Dmg Percent Fire", _dmgPercentFire);
+        AddIfNotZero("Dmg Percent Earth", _dmgPercentEarth);
+        AddIfNotZero("Dmg Percent Water", _dmgPercentWater);
+        AddIfNotZero("Dmg Percent Wind", _dmgPercentWind);
+        AddIfNotZero("Dmg Percent All", _dmgPercentAll);
 
-        PrintIfNotZero("CC", _cc);
-        PrintIfNotZero("EC", _ec);
-        PrintIfNotZero("Heal", _heal);
-        PrintIfNotZero("Res AP Debuff", _resApDebuff);
-        PrintIfNotZero("Res MP Debuff", _resMpDebuff);
-        PrintIfNotZero("Damages Rebound Percent", _damagesReboundPercent);
-        PrintIfNotZero("Tackle", _tackle);
-        PrintIfNotZero("Dodge", _dodge);
+        AddIfNotZero("CC", _cc);
+        AddIfNotZero("EC", _ec);
+        AddIfNotZero("Heal", _heal);
+        AddIfNotZero("Res AP Debuff", _resApDebuff);
+        AddIfNotZero("Res MP Debuff", _resMpDebuff);
+        AddIfNotZero("Damages Rebound Percent", _damagesReboundPercent);
+        AddIfNotZero("Tackle", _tackle);
+        AddIfNotZero("Dodge", _dodge);
 
-        PrintIfNotZero("Summon Number", _summonNumber);
-        PrintIfNotZero("Summon Dmg", _summonDmg);
-        PrintIfNotZero("Summon Res", _summonRes);
-        PrintIfNotZero("Summon CC", _summonCc);
-        PrintIfNotZero("Summon Tackle", _summonTackle);
-        PrintIfNotZero("Summon HP", _summonHp);
-        
-        Console.WriteLine("\n");
+        AddIfNotZero("Summon Number", _summonNumber);
+        AddIfNotZero("Summon Dmg", _summonDmg);
+        AddIfNotZero("Summon Res", _summonRes);
+        AddIfNotZero("Summon CC", _summonCc);
+        AddIfNotZero("Summon Tackle", _summonTackle);
+        AddIfNotZero("Summon HP", _summonHp);
+
+        return string.Join(Environment.NewLine, lines);
     }
 }

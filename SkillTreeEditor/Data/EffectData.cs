@@ -27,6 +27,7 @@ public class EffectData
     [JsonPropertyName("personal")] public bool Personal { get; set; }
     [JsonPropertyName("affectedByLocalisation")] public bool AffectedByLocalisation { get; set; }
     
+    [JsonIgnore]
     public string ActionTypeName =>
         Enum.IsDefined(typeof(ActionType), ActionId)
             ? ((ActionType)ActionId).ToString()

@@ -21,18 +21,21 @@ using Panel = System.Windows.Controls.Panel;
 using Point = System.Windows.Point;
 using SharpImage = SixLabors.ImageSharp.Image;
 using SixLabors.ImageSharp.PixelFormats;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using RichTextBox = System.Windows.Controls.RichTextBox;
 
 namespace SkillTreeEditor;
 
 public partial class MainWindow : Window
 {
-    
-    
     private const double PanThreshold = 3.0;
     private const double TileSize = 40.0;
-    private readonly double[] _zoomSteps = [ 0.1, 0.2, 0.4, 0.8, 1.6, 3.2 ];
+    private const double KeyboardPanStep = 500.0;
     
+    private readonly double[] _zoomSteps = [ 0.1, 0.2, 0.4, 0.8, 1.6, 3.2 ];
     private Dictionary<int, ImageSource> _images = new();
+    private readonly HashSet<Key> _pressedKeys = new();
+    
     private int _currentZoomStepIndex = 1;
     private bool _isPanning;
     private bool _isUpdatingSphereBoardControls;
@@ -44,6 +47,7 @@ public partial class MainWindow : Window
     private SphereBoardData? _selectedSphereBoard;
     private SphereData? _selectedSphere;
     private EffectData? _selectedEffect;
+    private TimeSpan? _lastRenderingTime;
     
     private static App App => (App)Application.Current;
     
@@ -55,6 +59,8 @@ public partial class MainWindow : Window
         SourceInitialized += OnSourceInitialized;
         SizeChanged += OnSizeChanged;
         Loaded += (_, _) => InitWidgets();
+        Loaded += (_, _) => CompositionTarget.Rendering += OnRendering;
+        Closed += (_, _) => CompositionTarget.Rendering -= OnRendering;
         FitCanvasToHost();
     }
 
@@ -132,6 +138,8 @@ public partial class MainWindow : Window
             var fighter = new Fighter(sphereBoard.Id, App.Spheres, breed);
             App.Fighters.Add(sphereBoard.Id, fighter);
         }
+
+        UpdateFighterStatsOverlay();
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -155,6 +163,8 @@ public partial class MainWindow : Window
 
     private void SkillTreeCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        ClearInputFocus();
+        
         if (_selectedSphereBoard is null)
             return;
 
@@ -226,6 +236,8 @@ public partial class MainWindow : Window
 
     private void SkillTreeCanvas_OnMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
+        ClearInputFocus();
+        
         _isPanning = true;
         _panStartMousePosition = e.GetPosition(this);
         _panStartCanvasOffset = new Point(SkillTreeCanvasTranslate.X, SkillTreeCanvasTranslate.Y);
@@ -255,7 +267,10 @@ public partial class MainWindow : Window
         SetSelectedSphereBoard(App.SphereBoards.FirstOrDefault(board => board.Id == selectedSphereBoardId));
 
         if (_selectedSphereBoard is not null)
+        {
             DrawSphereBoard();
+            UpdateFighterStatsOverlay();
+        }
     }
 
     private void BreedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -362,7 +377,15 @@ public partial class MainWindow : Window
             return;
 
         if (int.TryParse(SphereXpNumberTextBox.Text, out var xpNumber))
+        {
+            var updateOverlay = xpNumber != _selectedSphere.XpNumber;
             _selectedSphere.XpNumber = xpNumber;
+            if (updateOverlay && _selectedSphereBoard is not null)
+            {
+                App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+                UpdateFighterStatsOverlay();
+            }
+        }
         
         if (int.TryParse(SphereFighterCardListIdTextBox.Text, out var fighterCardListId))
             _selectedSphere.FighterCardListId = fighterCardListId;
@@ -397,6 +420,7 @@ public partial class MainWindow : Window
         RefreshEffectSelector();
         SetSelectedEffect(effect);
         App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        UpdateFighterStatsOverlay();
     }
 
     private void EffectRemove_Click(object sender, RoutedEventArgs e)
@@ -414,7 +438,9 @@ public partial class MainWindow : Window
         var nextIndex = Math.Min(index, _selectedSphere.Effects.Count - 1);
         SetSelectedEffect(nextIndex >= 0 ? _selectedSphere.Effects[nextIndex] : null);
         App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        UpdateFighterStatsOverlay();
     }
+
 
     private void EffectSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -434,6 +460,7 @@ public partial class MainWindow : Window
         
         EffectSelector.Items.Refresh();
         App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        UpdateFighterStatsOverlay();
     }
 
     private void AreaShapeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -496,6 +523,7 @@ public partial class MainWindow : Window
         _selectedEffect.Params.Add(value);
         UpdateEffectControlsFromSelectedEffect();
         App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        UpdateFighterStatsOverlay();
     }
 
     private void EffectParamRemove_Click(object sender, RoutedEventArgs e)
@@ -505,6 +533,7 @@ public partial class MainWindow : Window
         
         RemoveEffectListItem(EffectParamsListBox, _selectedEffect?.Params);
         App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        UpdateFighterStatsOverlay();
     }
 
     private void EffectTriggerBeforeAdd_Click(object sender, RoutedEventArgs e)
@@ -775,7 +804,13 @@ public partial class MainWindow : Window
         UpdateEffectControlsFromSelectedEffect();
     }
     
-    
+    private void ClearInputFocus()
+    {
+        Keyboard.ClearFocus();
+        FocusManager.SetFocusedElement(this, null);
+        Focus();
+        Keyboard.Focus(this);
+    }
     
     private void SetCanvasTranslation(double x, double y)
     {
@@ -793,6 +828,86 @@ public partial class MainWindow : Window
 
         SkillTreeCanvasTranslate.X = x;
         SkillTreeCanvasTranslate.Y = y;
+    }
+
+    private void PanCanvas(double deltaX, double deltaY)
+    {
+        SetCanvasTranslation(SkillTreeCanvasTranslate.X + deltaX, SkillTreeCanvasTranslate.Y + deltaY);
+    }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (IsTextInputFocused())
+            return;
+        if (e.Key is not (Key.W or Key.A or Key.S or Key.D))
+            return;
+        
+        _pressedKeys.Add(e.Key);
+        e.Handled = true;
+    }
+
+    private void Window_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (IsTextInputFocused())
+            return;
+        if (e.Key is not (Key.W or Key.A or Key.S or Key.D))
+            return;
+        
+        _pressedKeys.Remove(e.Key);
+        e.Handled = true;
+    }
+    
+    private bool IsTextInputFocused()
+    {
+        return Keyboard.FocusedElement is TextBoxBase
+               || Keyboard.FocusedElement is PasswordBox
+               || Keyboard.FocusedElement is ComboBox
+               || Keyboard.FocusedElement is RichTextBox;
+    }
+    
+    private void OnRendering(object? sender, EventArgs e)
+    {
+        if (_pressedKeys.Count == 0)
+        {
+            _lastRenderingTime = null;
+            return;
+        }
+
+        if (e is not RenderingEventArgs renderingEventArgs)
+            return;
+
+        var currentRenderingTime = renderingEventArgs.RenderingTime;
+
+        if (_lastRenderingTime is null)
+        {
+            _lastRenderingTime = currentRenderingTime;
+            return;
+        }
+
+        var deltaTime = currentRenderingTime - _lastRenderingTime.Value;
+        _lastRenderingTime = currentRenderingTime;
+
+        var deltaSeconds = deltaTime.TotalSeconds;
+        if (deltaSeconds <= 0)
+            return;
+
+        var deltaX = 0.0;
+        var deltaY = 0.0;
+
+        if (_pressedKeys.Contains(Key.A))
+            deltaX += KeyboardPanStep * deltaSeconds;
+
+        if (_pressedKeys.Contains(Key.D))
+            deltaX -= KeyboardPanStep * deltaSeconds;
+
+        if (_pressedKeys.Contains(Key.W))
+            deltaY += KeyboardPanStep * deltaSeconds;
+
+        if (_pressedKeys.Contains(Key.S))
+            deltaY -= KeyboardPanStep * deltaSeconds;
+
+        if (deltaX != 0 || deltaY != 0)
+            PanCanvas(deltaX, deltaY);
     }
     
     private void FitCanvasToHost()
@@ -967,6 +1082,19 @@ public partial class MainWindow : Window
         Canvas.SetLeft(tile, x * TileSize);
         Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
         SkillTreeCanvas.Children.Add(tile);
+    }
+    
+    private void UpdateFighterStatsOverlay()
+    {
+        if (_selectedSphereBoard is null || !App.Fighters.TryGetValue(_selectedSphereBoard.Id, out var fighter))
+        {
+            FighterStatsText.Text = string.Empty;
+            FighterStatsPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        FighterStatsText.Text = fighter.GetStatsText();
+        FighterStatsPanel.Visibility = Visibility.Visible;
     }
     
     private static ImageSource LoadSphereIconSource(int imageId)
