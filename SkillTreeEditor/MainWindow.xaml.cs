@@ -134,8 +134,7 @@ public partial class MainWindow : Window
 
         foreach (var sphereBoard in App.SphereBoards)
         {
-            var breed = App.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
-            var fighter = new Fighter(sphereBoard.Id, App.Spheres, breed);
+            var fighter = new Fighter(sphereBoard, App);
             App.Fighters.Add(sphereBoard.Id, fighter);
         }
 
@@ -382,7 +381,7 @@ public partial class MainWindow : Window
             _selectedSphere.XpNumber = xpNumber;
             if (updateOverlay && _selectedSphereBoard is not null)
             {
-                App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+                App.Fighters[_selectedSphereBoard.Id].ComputeStats();
                 UpdateFighterStatsOverlay();
             }
         }
@@ -419,7 +418,7 @@ public partial class MainWindow : Window
         _selectedSphere.Effects.Add(effect);
         RefreshEffectSelector();
         SetSelectedEffect(effect);
-        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
     }
 
@@ -437,7 +436,7 @@ public partial class MainWindow : Window
 
         var nextIndex = Math.Min(index, _selectedSphere.Effects.Count - 1);
         SetSelectedEffect(nextIndex >= 0 ? _selectedSphere.Effects[nextIndex] : null);
-        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
     }
 
@@ -459,7 +458,7 @@ public partial class MainWindow : Window
             _selectedEffect.ActionId = actionId;
         
         EffectSelector.Items.Refresh();
-        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
     }
 
@@ -522,7 +521,7 @@ public partial class MainWindow : Window
 
         _selectedEffect.Params.Add(value);
         UpdateEffectControlsFromSelectedEffect();
-        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
     }
 
@@ -532,7 +531,7 @@ public partial class MainWindow : Window
             return;
         
         RemoveEffectListItem(EffectParamsListBox, _selectedEffect?.Params);
-        App.Fighters[_selectedSphereBoard.Id].ComputeStats(App.Spheres);
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
     }
 

@@ -44,18 +44,24 @@ public class Fighter
     private int _summonCc;
     private int _summonTackle;
     private int _summonHp;
+
+    private int _globalStatsValue;
     
-    private int _sphereBoardId;
+    private SphereBoardData _sphereBoard;
     private int _totalXp;
     private int _totalSpheres;
     
     private BreedData _breed;
+    private BreedWeightsData _breedWeights;
+    private App _app;
 
-    public Fighter(int sphereBoardId, List<SphereData> spheres, BreedData breed)
+    public Fighter(SphereBoardData sphereBoard, App app)
     {
-        _sphereBoardId = sphereBoardId;
-        _breed = breed;
-        ComputeStats(spheres);
+        _sphereBoard = sphereBoard;
+        _breed = app.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
+        _breedWeights = app.BreedWeights.First(breedWeights => (int)breedWeights.Breed == sphereBoard.BreedId);
+        _app = app;
+        ComputeStats();
     }
 
     public void ResetStats()
@@ -107,11 +113,11 @@ public class Fighter
         _totalSpheres = 0;
     }
 
-    public void ComputeStats(List<SphereData> spheres)
+    public void ComputeStats()
     {
         ResetStats();
 
-        foreach (var sphere in spheres.Where(s => s.SphereBoardId == _sphereBoardId))
+        foreach (var sphere in _app.Spheres.Where(s => s.SphereBoardId == _sphereBoard.Id))
         {
             _totalXp += sphere.XpNumber;
             var isValid = false;
@@ -346,6 +352,8 @@ public class Fighter
             if (isValid)
                 _totalSpheres++;
         }
+
+        ComputeWeightedStatsValue();
     }
     
     public string GetStatsText()
@@ -354,6 +362,7 @@ public class Fighter
         {
             $"Total XP: {_totalXp}",
             $"Total Spheres: {_totalSpheres}",
+            $"Global value: {_globalStatsValue}",
             ""
         };
 
@@ -407,5 +416,39 @@ public class Fighter
         AddIfNotZero("Summon HP", _summonHp);
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private void ComputeWeightedStatsValue()
+    {
+        var value = 0.0f;
+
+        value += _hp * _breedWeights.HpWeight;
+        value += _range * _breedWeights.RangeWeight;
+        
+        value += _resPercentFire * _breedWeights.ResPercentFireWeight;
+        value += _resPercentEarth * _breedWeights.ResPercentEarthWeight;
+        value += _resPercentWater * _breedWeights.ResPercentWaterWeight;
+        value += _resPercentWind * _breedWeights.ResPercentWindWeight;
+        value += _resPercentAll * _breedWeights.ResPercentAllWeight;
+        
+        value += _dmgPercentFire * _breedWeights.DmgPercentFireWeight;
+        value += _dmgPercentEarth * _breedWeights.DmgPercentEarthWeight;
+        value += _dmgPercentWater * _breedWeights.DmgPercentWaterWeight;
+        value += _dmgPercentWind * _breedWeights.DmgPercentWindWeight;
+        value += _dmgPercentAll * _breedWeights.DmgPercentAllWeight;
+        
+        value += _cc * _breedWeights.CcWeight;
+        value += _heal * _breedWeights.HealWeight;
+        value += _tackle * _breedWeights.TackleWeight;
+        value += _dodge * _breedWeights.DodgeWeight;
+        
+        value += _summonHp * _breedWeights.SummonHpWeight;
+        value += _summonDmg * _breedWeights.SummonDmgWeight;
+        value += _summonRes * _breedWeights.SummonResWeight;
+        value += _summonCc * _breedWeights.SummonCcWeight;
+        value += _summonTackle * _breedWeights.SummonTackleWeight;
+        value += _summonNumber * _breedWeights.SummonNumberWeight;
+        
+        _globalStatsValue = (int)value;
     }
 }

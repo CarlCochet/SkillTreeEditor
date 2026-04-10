@@ -13,7 +13,9 @@ public partial class App : Application
     public List<SphereData> Spheres = [];
     public List<SpellData> SpellCards = [];
     public List<BreedData> Breeds = [];
-    public Dictionary<int, Fighter> Fighters = new();
+    public List<EffectData> CardEffects = [];
+    public List<BreedWeightsData> BreedWeights = [];
+    public readonly Dictionary<int, Fighter> Fighters = new();
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -57,6 +59,22 @@ public partial class App : Application
             var json = File.ReadAllText(breedPath);
             Breeds = JsonSerializer.Deserialize<List<BreedData>>(json, _jsonOptions) ?? [];
             Console.WriteLine($"Loaded {Breeds.Count} breeds");
+        }
+        
+        var effectPath = Path.Combine(folderPath, "card_effects.json");
+        if (File.Exists(effectPath))
+        {
+            var json = File.ReadAllText(effectPath);
+            CardEffects = JsonSerializer.Deserialize<List<EffectData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {CardEffects.Count} card effects");
+        }
+        
+        var breedWeightsPath = Path.Combine(folderPath, "breed_stats_weights.json");
+        if (File.Exists(breedWeightsPath))
+        {
+            var json = File.ReadAllText(breedWeightsPath);
+            BreedWeights = JsonSerializer.Deserialize<List<BreedWeightsData>>(json, _jsonOptions) ?? [];
+            Console.WriteLine($"Loaded {BreedWeights.Count} breed weights");
         }
     }
     
