@@ -618,7 +618,7 @@ public partial class MainWindow : Window
         
         SetSelectedSphere(clickedSphere);
         DrawSphereBoard();
-        DrawTile(x, y, Brushes.Chartreuse);
+        DrawSelectCircle(x, y, Brushes.Red);
         
         if (clickedSphere.TeleportXPosition != 0 || clickedSphere.TeleportYPosition != 0)
             DrawTeleportLine(clickedSphere);
@@ -1030,7 +1030,7 @@ public partial class MainWindow : Window
                 DrawIcon(sphere.XPosition, sphere.YPosition, icon);
         }
         
-        DrawIcon(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, _images[33]);
+        DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Lime);
     }
     
     private void DrawTeleportLine(SphereData sphere)
@@ -1049,6 +1049,26 @@ public partial class MainWindow : Window
 
         Panel.SetZIndex(line, 1000);
         SkillTreeCanvas.Children.Add(line);
+    }
+
+    private void DrawSelectCircle(int x, int y, SolidColorBrush brush)
+    {
+        const double diameter = TileSize + 10;
+        var circle = new Ellipse
+        {
+            Width = diameter,
+            Height = diameter,
+            Fill = Brushes.Transparent,
+            Stroke = brush,
+            StrokeThickness = 4,
+            IsHitTestVisible = false,
+            SnapsToDevicePixels = true
+        };
+
+        Canvas.SetLeft(circle, x * TileSize - (diameter - TileSize) / 2);
+        Canvas.SetTop(circle, SkillTreeCanvas.Height - y * TileSize - (diameter - TileSize) / 2);
+        Panel.SetZIndex(circle, 900);
+        SkillTreeCanvas.Children.Add(circle);
     }
 
     private void DrawTile(int x, int y, SolidColorBrush brush)
