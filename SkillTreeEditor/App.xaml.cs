@@ -43,6 +43,13 @@ public partial class App : Application
         foreach (var sphere in Spheres)
         {
             sphere.BarrierCoachCards = [];
+            if (sphere.Id == 0)
+                sphere.Id = GenerateSphereId();
+            foreach (var sphereEffect in sphere.Effects)
+            {
+                if (sphereEffect.Id == 0)
+                    sphereEffect.Id = GenerateEffectId();
+            }
         }
         
         var spellPath = Path.Combine(folderPath, "spell_cards.json");
@@ -80,6 +87,8 @@ public partial class App : Application
     
     public void SaveProjectFolder(string folderPath)
     {
+        ComputeLinkedSpheres();
+            
         var sphereBoardsPath = Path.Combine(folderPath, "sphere_boards.json");
         var spheresPath = Path.Combine(folderPath, "spheres.json");
         
@@ -92,13 +101,9 @@ public partial class App : Application
 
     public SphereBoardData CreateSphereBoard()
     {
-        var newId = 1;
-        while (SphereBoards.Any(sphereBoard => sphereBoard.Id == newId))
-            newId++;
-        
         return new SphereBoardData
         {
-            Id = newId,
+            Id = GenerateSphereBoardId(),
             SeasonId = 1,
             BreedId = 1,
             FighterCardListId = 5,
@@ -110,22 +115,161 @@ public partial class App : Application
 
     public SphereData CreateSphere(int x, int y, int sphereBoardId)
     {
-        var newId = 1;
-        while (Spheres.Any(sphere => sphere.Id == newId))
-            newId++;
-        
-        var sphere = new SphereData
+        var newSphere = new SphereData
         {
+            Id = GenerateSphereId(),
             SphereBoardId = sphereBoardId,
             XPosition = x,
             YPosition = y
         };
-
-        return sphere;
+        Spheres.Add(newSphere);
+        return newSphere;
     }
 
     public void RemoveSphere(int x, int y, int sphereBoardId)
     {
-        Spheres.RemoveAll(sphere => sphere.SphereBoardId == sphereBoardId && sphere.XPosition == x && sphere.YPosition == y);
+        Spheres.RemoveAll(sphere => sphere.SphereBoardId == sphereBoardId 
+                                    && sphere.XPosition == x 
+                                    && sphere.YPosition == y);
+    }
+
+    public EffectData CreateEffect(SphereData sphere)
+    {
+        var newEffect = new EffectData
+        {
+            Id = GenerateEffectId(),
+            ParentId = sphere.Id,
+            ParentType = "SPHERE",
+            AreaShape = 1,
+            Personal = true
+        };
+        sphere.Effects.Add(newEffect);
+        return newEffect;
+    }
+
+    private void ComputeLinkedSpheres()
+    {
+        foreach (var sphereBoardData in SphereBoards)
+        {
+            var spheres = Spheres
+                .Where(s => s.SphereBoardId == sphereBoardData.Id && !s.Impassable)
+                .ToList();
+
+            var startSphere = spheres.FirstOrDefault(s => s.XPosition == sphereBoardData.StartX 
+                                                          && s.YPosition == sphereBoardData.StartY);
+
+            if (startSphere is null)
+            {
+                startSphere = new SphereData
+                {
+                    Id = 0,
+                    SphereBoardId = sphereBoardData.Id, 
+                    XPosition = sphereBoardData.StartX, 
+                    YPosition = sphereBoardData.StartY
+                };
+                Spheres.Add(startSphere);
+            }
+            
+            var sphereByPosition = spheres.ToDictionary(s => (s.XPosition, s.YPosition));
+            var effectSpheres = spheres.Where(IsEffectSphere).ToList();
+            effectSpheres.Add(startSphere);
+
+            foreach (var sphere in effectSpheres)
+            {
+                sphere.LinkedSphereIds = [];
+            }
+
+            foreach (var origin in effectSpheres)
+            {
+                HashSet<int> linkedSphereIds = [];
+
+                foreach (var (dx, dy) in Directions)
+                {
+                    var nextPos = (origin.XPosition + dx, origin.YPosition + dy);
+
+                    if (!sphereByPosition.TryGetValue(nextPos, out var neighbor))
+                        continue;
+
+                    HashSet<int> visited = [origin.Id];
+                    ExploreBranch(neighbor, sphereByPosition, visited, linkedSphereIds);
+                }
+
+                origin.LinkedSphereIds = linkedSphereIds.ToList();
+            }
+        }
+    }
+
+    private static void ExploreBranch(
+        SphereData current,
+        Dictionary<(int X, int Y), SphereData> sphereByPosition,
+        HashSet<int> visited,
+        HashSet<int> foundEffectIds)
+    {
+        if (!visited.Add(current.Id))
+            return;
+
+        if (IsEffectSphere(current))
+        {
+            foundEffectIds.Add(current.Id);
+            return;
+        }
+
+        foreach (var (dx, dy) in Directions)
+        {
+            var nextPos = (current.XPosition + dx, current.YPosition + dy);
+
+            if (!sphereByPosition.TryGetValue(nextPos, out var nextSphere))
+                continue;
+
+            if (visited.Contains(nextSphere.Id))
+                continue;
+
+            ExploreBranch(nextSphere, sphereByPosition, visited, foundEffectIds);
+        }
+    }
+
+    private static bool IsEffectSphere(SphereData sphere)
+    {
+        return sphere.Effects.Count > 0
+               || sphere.SpellId > 0
+               || sphere.FighterCardListId > 0
+               || sphere.TeleportXPosition > 0
+               || sphere.TeleportYPosition > 0;
+    }
+
+    private static readonly (int Dx, int Dy)[] Directions =
+    [
+        (0, -1),
+        (1, 0),
+        (0, 1),
+        (-1, 0)
+    ];
+
+    private int GenerateSphereBoardId()
+    {
+        var newId = 1;
+        while (SphereBoards.Any(sb => sb.Id == newId))
+            newId++;
+        return newId;
+    }
+
+    private int GenerateSphereId()
+    {
+        var newId = 1;
+        var sphereIds = Spheres.Select(s => s.Id).ToHashSet();
+        while (sphereIds.Contains(newId))
+            newId++;
+        return newId;
+    }
+
+    private int GenerateEffectId()
+    {
+        var newId = 1;
+        var effects = CardEffects.Select(e => e.Id);
+        var sphereEffects = Spheres.SelectMany(s => s.Effects).Select(e => e.Id);
+        var effectIds = effects.Concat(sphereEffects).ToHashSet();
+        while (effectIds.Contains(newId))
+            newId++;
+        return newId;
     }
 }

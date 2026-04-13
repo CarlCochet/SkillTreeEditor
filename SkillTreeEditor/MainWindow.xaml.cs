@@ -409,13 +409,7 @@ public partial class MainWindow : Window
         if (_selectedSphereBoard is null || _selectedSphere is null)
             return;
 
-        var effect = new EffectData
-        {
-            ParentId = _selectedSphere.Id,
-            ParentType = nameof(SphereData)
-        };
-
-        _selectedSphere.Effects.Add(effect);
+        var effect = App.CreateEffect(_selectedSphere);
         RefreshEffectSelector();
         SetSelectedEffect(effect);
         App.Fighters[_selectedSphereBoard.Id].ComputeStats();
@@ -588,7 +582,6 @@ public partial class MainWindow : Window
             return;
 
         var sphere = App.CreateSphere(x, y, _selectedSphereBoard.Id);
-        App.Spheres.Add(sphere);
         SetSelectedSphere(sphere);
         DrawSphereBoard();
     }

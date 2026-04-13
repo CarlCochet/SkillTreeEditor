@@ -16,4 +16,5 @@ public class SphereData
     [JsonPropertyName("yposition")] public int YPosition { get; set; }
     [JsonPropertyName("impassable")] public bool Impassable { get; set; }
     [JsonPropertyName("xposition")] public int XPosition { get; set; }
+    [JsonPropertyName("linkedSphereIds")] public List<int> LinkedSphereIds { get; set; } = [];
 }
