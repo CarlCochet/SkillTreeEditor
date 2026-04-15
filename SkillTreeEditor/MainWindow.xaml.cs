@@ -454,6 +454,7 @@ public partial class MainWindow : Window
         EffectSelector.Items.Refresh();
         App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
+        DrawSphereBoard();
     }
 
     private void AreaShapeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
