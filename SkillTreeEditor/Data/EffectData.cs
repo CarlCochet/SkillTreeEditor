@@ -32,4 +32,32 @@ public class EffectData
         Enum.IsDefined(typeof(ActionType), ActionId)
             ? ((ActionType)ActionId).ToString()
             : $"Unknown ({ActionId})";
+    
+    public EffectData Copy()
+    {
+        return new EffectData
+        {
+            Id = Id,
+            ActionId = ActionId,
+            ParentId = ParentId,
+            ParentType = ParentType,
+            AreaShape = AreaShape,
+            AreaOrderingMethod = AreaOrderingMethod,
+            TargetTriggerSelf = TargetTriggerSelf,
+            SingleTarget = SingleTarget,
+            Params = [.. Params],
+            TriggersBefore = [.. TriggersBefore],
+            TriggersAfter = [.. TriggersAfter],
+            EndTriggers = [.. EndTriggers],
+            ServerSideTriggers = [.. ServerSideTriggers],
+            AreaSize = [.. AreaSize],
+            Duration = [.. Duration],
+            Targets = [.. Targets],
+            TriggeredWithDuration = TriggeredWithDuration,
+            AppliedIfTargetValid = AppliedIfTargetValid,
+            Critical = Critical,
+            Personal = Personal,
+            AffectedByLocalisation = AffectedByLocalisation
+        };
+    }
 }

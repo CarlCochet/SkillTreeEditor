@@ -33,20 +33,28 @@ public partial class MainWindow : Window
     private const double KeyboardPanStep = 500.0;
     
     private readonly double[] _zoomSteps = [ 0.1, 0.2, 0.4, 0.8, 1.6, 3.2 ];
-    private Dictionary<int, ImageSource> _images = new();
-    private readonly HashSet<Key> _pressedKeys = new();
+    private readonly Dictionary<int, ImageSource> _images = [];
+    private readonly HashSet<Key> _pressedKeys = [];
+    
+    private readonly Dictionary<(int X, int Y), List<UIElement>> _tiles = [];
+    private UIElement? _selectedSphereMarker;
+    private UIElement? _selectedTeleportMarker;
     
     private int _currentZoomStepIndex = 1;
     private bool _isPanning;
+    private bool _isPaintingSpheres;
+    private bool _isRemovingSpheres;
     private bool _isUpdatingSphereBoardControls;
     private bool _isUpdatingSphereControls;
     private bool _isUpdatingEffectControls;
+    
     private EditorMode _sphereEditionMode = EditorMode.Select;
     private Point _panStartMousePosition;
     private Point _panStartCanvasOffset;
     private SphereBoardData? _selectedSphereBoard;
     private SphereData? _selectedSphere;
     private EffectData? _selectedEffect;
+    private SphereData? _copiedSphere;
     private TimeSpan? _lastRenderingTime;
     
     private static App App => (App)Application.Current;
@@ -168,17 +176,20 @@ public partial class MainWindow : Window
             return;
 
         var position = e.GetPosition(SkillTreeCanvas);
-
         var clickedX = (int)(position.X / TileSize);
         var clickedY = (int)((SkillTreeCanvas.Height - position.Y) / TileSize) + 1;
 
         switch(_sphereEditionMode)
         {
             case EditorMode.Add:
+                _isPaintingSpheres = true;
                 AddSphere(clickedX, clickedY);
+                SkillTreeCanvas.CaptureMouse();
                 break;
             case EditorMode.Remove:
+                _isRemovingSpheres = true;
                 RemoveSphere(clickedX, clickedY);
+                SkillTreeCanvas.CaptureMouse();
                 break;
             case EditorMode.Select:
                 SelectSphere(clickedX, clickedY);
@@ -190,23 +201,41 @@ public partial class MainWindow : Window
 
     private void SkillTreeCanvas_MouseMove(object sender, MouseEventArgs e)
     {
-        if (!_isPanning || e.RightButton != MouseButtonState.Pressed)
+        if (_isPanning && e.RightButton == MouseButtonState.Pressed)
+        {
+            var currentPosition = e.GetPosition(this);
+            var delta = currentPosition - _panStartMousePosition;
+
+            if (Math.Abs(delta.X) >= PanThreshold || Math.Abs(delta.Y) >= PanThreshold)
+                SetCanvasTranslation(_panStartCanvasOffset.X + delta.X, _panStartCanvasOffset.Y + delta.Y);
+
+            e.Handled = true;
+        }
+
+        if (_selectedSphereBoard is null || e.LeftButton != MouseButtonState.Pressed)
             return;
 
-        var currentPosition = e.GetPosition(this);
-        var delta = currentPosition - _panStartMousePosition;
+        var position = e.GetPosition(SkillTreeCanvas);
+        var clickedX = (int)(position.X / TileSize);
+        var clickedY = (int)((SkillTreeCanvas.Height - position.Y) / TileSize) + 1;
 
-        if (Math.Abs(delta.X) < PanThreshold && Math.Abs(delta.Y) < PanThreshold)
-            return;
-
-        SetCanvasTranslation(_panStartCanvasOffset.X + delta.X, _panStartCanvasOffset.Y + delta.Y);
-
+        if (_isPaintingSpheres)
+            AddSphere(clickedX, clickedY);
+        else if (_isRemovingSpheres)
+            RemoveSphere(clickedX, clickedY);
+        
         e.Handled = true;
     }
 
     private void SkillTreeCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        
+        if (!_isPaintingSpheres && !_isRemovingSpheres)
+            return;
+
+        _isPaintingSpheres = false;
+        _isRemovingSpheres = false;
+        SkillTreeCanvas.ReleaseMouseCapture();
+        e.Handled = true;
     }
 
     private void SkillTreeCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -327,6 +356,9 @@ public partial class MainWindow : Window
     {
         if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)
             return;
+        
+        var oldStartX = _selectedSphereBoard.StartX;
+        var oldStartY = _selectedSphereBoard.StartY;
 
         if (int.TryParse(StartXTextBox.Text, out var startX))
             _selectedSphereBoard.StartX = startX;
@@ -334,7 +366,8 @@ public partial class MainWindow : Window
         if (int.TryParse(StartYTextBox.Text, out var startY))
             _selectedSphereBoard.StartY = startY;
         
-        DrawSphereBoard();
+        DrawTile(oldStartX, oldStartY);
+        DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Lime);
     }
     
     private void SphereModeAdd_Click(object sender, RoutedEventArgs e)
@@ -367,13 +400,16 @@ public partial class MainWindow : Window
             return;
 
         _selectedSphere.Impassable = SphereImpassableCheckBox.IsChecked == true;
-        DrawSphereBoard();
+        DrawSphereAtCurrentPosition(_selectedSphere);
     }
 
     private void SphereValueTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_selectedSphere is null || _isUpdatingSphereControls)
             return;
+        
+        var oldX = _selectedSphere.XPosition;
+        var oldY = _selectedSphere.YPosition;
 
         if (int.TryParse(SphereXpNumberTextBox.Text, out var xpNumber))
         {
@@ -401,7 +437,10 @@ public partial class MainWindow : Window
         if (int.TryParse(SphereYPositionTextBox.Text, out var y))
             _selectedSphere.YPosition = y;
 
-        DrawSphereBoard();
+        DrawSphereAtCurrentPosition(_selectedSphere);
+
+        if (oldX != _selectedSphere.XPosition || oldY != _selectedSphere.YPosition)
+            DrawTile(oldX, oldY);
     }
     
     private void EffectAdd_Click(object sender, RoutedEventArgs e)
@@ -432,6 +471,7 @@ public partial class MainWindow : Window
         SetSelectedEffect(nextIndex >= 0 ? _selectedSphere.Effects[nextIndex] : null);
         App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
+        DrawSphereAtCurrentPosition(_selectedSphere);
     }
 
 
@@ -445,7 +485,7 @@ public partial class MainWindow : Window
     
     private void ActionIdSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_selectedSphereBoard is null || _selectedEffect is null || _isUpdatingEffectControls)
+        if (_selectedSphereBoard is null || _selectedEffect is null || _isUpdatingEffectControls || _selectedSphere is null)
             return;
 
         if (ActionIdSelector.SelectedValue is int actionId)
@@ -454,7 +494,7 @@ public partial class MainWindow : Window
         EffectSelector.Items.Refresh();
         App.Fighters[_selectedSphereBoard.Id].ComputeStats();
         UpdateFighterStatsOverlay();
-        DrawSphereBoard();
+        DrawSphereAtCurrentPosition(_selectedSphere);
     }
 
     private void AreaShapeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -576,32 +616,47 @@ public partial class MainWindow : Window
     {
         AddEnumEffectListItem(EffectTargetSelector, effect => effect.Targets);
     }
+    
+    private void EffectTargetRemove_Click(object sender, RoutedEventArgs e)
+    {
+        RemoveEffectListItem(EffectTargetsListBox, _selectedEffect?.Targets);
+    }
 
     private void AddSphere(int x, int y)
     {
         if (_selectedSphereBoard is null)
             return;
-
-        var sphere = App.CreateSphere(x, y, _selectedSphereBoard.Id);
+        
+        var sphere = App.Spheres.FirstOrDefault(sphere => sphere.SphereBoardId == _selectedSphereBoard.Id && 
+                                                          sphere.XPosition == x && 
+                                                          sphere.YPosition == y) 
+                     ?? App.CreateSphere(x, y, _selectedSphereBoard.Id);
+        sphere.Reset();
         SetSelectedSphere(sphere);
-        DrawSphereBoard();
+        DrawSphereAtCurrentPosition(sphere);
     }
 
     private void RemoveSphere(int x, int y)
     {
         if (_selectedSphereBoard is null)
             return;
+        if (!App.Spheres.Any(sphere => sphere.SphereBoardId == _selectedSphereBoard.Id && sphere.XPosition == x && sphere.YPosition == y))
+            return;
         
         App.RemoveSphere(x, y, _selectedSphereBoard.Id);
         _selectedSphere = null;
-        DrawSphereBoard();
+        DrawTile(x, y);
     }
 
     private void SelectSphere(int x, int y)
     {
         if (_selectedSphereBoard is null)
             return;
-        
+
+        var previousSelectedSphere = _selectedSphere;
+        var previousMarker = _selectedSphereMarker;
+        var previousTeleportMarker = _selectedTeleportMarker;
+
         var clickedSphere = App.Spheres.FirstOrDefault(sphere =>
             sphere.SphereBoardId == _selectedSphereBoard.Id &&
             sphere.XPosition == x &&
@@ -609,18 +664,81 @@ public partial class MainWindow : Window
 
         if (clickedSphere is null)
             return;
-        
+
+        if (previousMarker is not null)
+        {
+            SkillTreeCanvas.Children.Remove(previousMarker);
+            _selectedSphereMarker = null;
+        }
+
+        if (previousTeleportMarker is not null)
+        {
+            SkillTreeCanvas.Children.Remove(previousTeleportMarker);
+            _selectedTeleportMarker = null;
+        }
+
+        if (previousSelectedSphere is not null)
+            DrawSphereAtCurrentPosition(previousSelectedSphere);
+
         SetSelectedSphere(clickedSphere);
-        DrawSphereBoard();
-        DrawSelectCircle(x, y, Brushes.Red);
+        DrawSphereAtCurrentPosition(clickedSphere);
+        _selectedSphereMarker = DrawSelectCircle(x, y, Brushes.Red);
+        SkillTreeCanvas.Children.Add(_selectedSphereMarker);
+
+        if (clickedSphere is { TeleportXPosition: 0, TeleportYPosition: 0 })
+            return;
         
-        if (clickedSphere.TeleportXPosition != 0 || clickedSphere.TeleportYPosition != 0)
-            DrawTeleportLine(clickedSphere);
+        _selectedTeleportMarker = DrawTeleportLine(clickedSphere);
+        SkillTreeCanvas.Children.Add(_selectedTeleportMarker);
+    }
+    
+    private void CopySelectedSphere()
+    {
+        if (_selectedSphere is null)
+            return;
+
+        _copiedSphere = _selectedSphere.Copy();
     }
 
-    private void EffectTargetRemove_Click(object sender, RoutedEventArgs e)
+    private void PasteCopiedSphere()
     {
-        RemoveEffectListItem(EffectTargetsListBox, _selectedEffect?.Targets);
+        if (_selectedSphere is null || _copiedSphere is null)
+            return;
+
+        var targetSphere = _selectedSphere;
+        var oldX = targetSphere.XPosition;
+        var oldY = targetSphere.YPosition;
+
+        ApplySphereCopy(targetSphere, _copiedSphere);
+
+        DrawSphereAtCurrentPosition(targetSphere);
+        if (oldX != targetSphere.XPosition || oldY != targetSphere.YPosition)
+            DrawTile(oldX, oldY);
+
+        SetSelectedSphere(targetSphere);
+
+        if (_selectedSphereBoard is null)
+            return;
+        
+        App.Fighters[_selectedSphereBoard.Id].ComputeStats();
+        UpdateFighterStatsOverlay();
+    }
+
+    private void ApplySphereCopy(SphereData target, SphereData source)
+    {
+        target.XpNumber = source.XpNumber;
+        target.SpellId = source.SpellId;
+        target.FighterCardListId = source.FighterCardListId;
+        target.BarrierCoachCards = [.. source.BarrierCoachCards];
+        target.TeleportXPosition = source.TeleportXPosition;
+        target.TeleportYPosition = source.TeleportYPosition;
+        target.Impassable = source.Impassable;
+        
+        target.Effects.Clear();
+        foreach (var sourceEffect in source.Effects)
+        {
+            App.CreateEffectCopy(target, sourceEffect);
+        }
     }
     
     private void SetSelectedSphereBoard(SphereBoardData? sphereBoard)
@@ -832,6 +950,21 @@ public partial class MainWindow : Window
     {
         if (IsTextInputFocused())
             return;
+        
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && e.Key == Key.C)
+        {
+            CopySelectedSphere();
+            e.Handled = true;
+            return;
+        }
+
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && e.Key == Key.V)
+        {
+            PasteCopiedSphere();
+            e.Handled = true;
+            return;
+        }
+        
         if (e.Key is not (Key.W or Key.A or Key.S or Key.D))
             return;
         
@@ -1009,6 +1142,8 @@ public partial class MainWindow : Window
     private void DrawSphereBoard()
     {
         SkillTreeCanvas.Children.Clear();
+        _tiles.Clear();
+
         if (_selectedSphereBoard is null)
             return;
 
@@ -1017,17 +1152,13 @@ public partial class MainWindow : Window
             if (sphere.SphereBoardId != _selectedSphereBoard.Id)
                 continue;
             
-            DrawTile(sphere.XPosition, sphere.YPosition, Brushes.BurlyWood);
-            var iconId = Helper.GetIconIdFromSphere(sphere);
-
-            if (_images.TryGetValue(iconId, out var icon))
-                DrawIcon(sphere.XPosition, sphere.YPosition, icon);
+            DrawSphereAtCurrentPosition(sphere);
         }
         
         DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Lime);
     }
     
-    private void DrawTeleportLine(SphereData sphere)
+    private Line DrawTeleportLine(SphereData sphere)
     {
         var line = new Line
         {
@@ -1042,10 +1173,10 @@ public partial class MainWindow : Window
         };
 
         Panel.SetZIndex(line, 1000);
-        SkillTreeCanvas.Children.Add(line);
+        return line;
     }
 
-    private void DrawSelectCircle(int x, int y, SolidColorBrush brush)
+    private Ellipse DrawSelectCircle(int x, int y, SolidColorBrush brush)
     {
         const double diameter = TileSize + 10;
         var circle = new Ellipse
@@ -1062,22 +1193,76 @@ public partial class MainWindow : Window
         Canvas.SetLeft(circle, x * TileSize - (diameter - TileSize) / 2);
         Canvas.SetTop(circle, SkillTreeCanvas.Height - y * TileSize - (diameter - TileSize) / 2);
         Panel.SetZIndex(circle, 900);
-        SkillTreeCanvas.Children.Add(circle);
+        return circle;
     }
 
-    private void DrawTile(int x, int y, SolidColorBrush brush)
+    private void DrawSphereAtCurrentPosition(SphereData sphere)
     {
-        var tile = new Border
-        {
-            Width = TileSize,
-            Height = TileSize,
-            Background = brush,
-            BorderBrush = Brushes.Transparent
-        };
+        var iconId = Helper.GetIconIdFromSphere(sphere);
+        _images.TryGetValue(iconId, out var icon);
+        DrawTile(sphere.XPosition, sphere.YPosition, Brushes.BurlyWood, icon);
 
-        Canvas.SetLeft(tile, x * TileSize);
-        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
-        SkillTreeCanvas.Children.Add(tile);
+        if (_selectedSphereBoard is not null &&
+            sphere.XPosition == _selectedSphereBoard.StartX &&
+            sphere.YPosition == _selectedSphereBoard.StartY)
+        {
+            DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Lime);
+        }
+    }
+
+    private void DrawTile(int x, int y, SolidColorBrush? brush = null, ImageSource? icon = null)
+    {
+        RemoveTile(x, y);
+
+        var elements = new List<UIElement>();
+
+        if (brush is not null)
+        {
+            var tile = new Border
+            {
+                Width = TileSize,
+                Height = TileSize,
+                Background = brush,
+                BorderBrush = Brushes.Transparent
+            };
+
+            Canvas.SetLeft(tile, x * TileSize);
+            Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
+            elements.Add(tile);
+            SkillTreeCanvas.Children.Add(tile);
+        }
+
+        if (icon is not null)
+        {
+            var image = new Image
+            {
+                Width = TileSize,
+                Height = TileSize,
+                Source = icon,
+                Stretch = Stretch.Fill,
+                SnapsToDevicePixels = true,
+                IsHitTestVisible = false
+            };
+
+            Canvas.SetLeft(image, x * TileSize);
+            Canvas.SetTop(image, SkillTreeCanvas.Height - y * TileSize);
+            elements.Add(image);
+            SkillTreeCanvas.Children.Add(image);
+        }
+
+        if (elements.Count > 0)
+            _tiles[(x, y)] = elements;
+    }
+    
+    private void RemoveTile(int x, int y)
+    {
+        if (!_tiles.TryGetValue((x, y), out var elements))
+            return;
+
+        foreach (var element in elements)
+            SkillTreeCanvas.Children.Remove(element);
+
+        _tiles.Remove((x, y));
     }
 
     private void DrawIcon(int x, int y, ImageSource icon)

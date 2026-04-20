@@ -147,6 +147,13 @@ public partial class App : Application
         return newEffect;
     }
 
+    public void CreateEffectCopy(SphereData sphere, EffectData effect)
+    {
+        var newEffect = effect.Copy();
+        effect.Id = GenerateEffectId();
+        sphere.Effects.Add(newEffect);
+    }
+
     private void ComputeLinkedSpheres()
     {
         foreach (var sphereBoardData in SphereBoards)
