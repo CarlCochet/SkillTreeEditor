@@ -366,7 +366,16 @@ public partial class MainWindow : Window
         if (int.TryParse(StartYTextBox.Text, out var startY))
             _selectedSphereBoard.StartY = startY;
         
-        DrawTile(oldStartX, oldStartY);
+        var oldSphere = App.Spheres.FirstOrDefault(s =>
+            s.SphereBoardId == _selectedSphereBoard.Id &&
+            s.XPosition == oldStartX &&
+            s.YPosition == oldStartY);
+
+        if (oldSphere is not null)
+            DrawSphereAtCurrentPosition(oldSphere);
+        else
+            DrawTile(oldStartX, oldStartY);
+
         DrawTile(_selectedSphereBoard.StartX, _selectedSphereBoard.StartY, Brushes.Lime);
     }
     
@@ -1263,23 +1272,6 @@ public partial class MainWindow : Window
             SkillTreeCanvas.Children.Remove(element);
 
         _tiles.Remove((x, y));
-    }
-
-    private void DrawIcon(int x, int y, ImageSource icon)
-    {
-        var tile = new Image
-        {
-            Width = TileSize,
-            Height = TileSize,
-            Source = icon,
-            Stretch = Stretch.Fill,
-            SnapsToDevicePixels = true,
-            IsHitTestVisible = false
-        };
-
-        Canvas.SetLeft(tile, x * TileSize);
-        Canvas.SetTop(tile, SkillTreeCanvas.Height - y * TileSize);
-        SkillTreeCanvas.Children.Add(tile);
     }
     
     private void UpdateFighterStatsOverlay()
