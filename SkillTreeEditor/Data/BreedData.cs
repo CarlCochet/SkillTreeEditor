@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using SkillTreeEditor.Enums;
 
-namespace SkillTreeEditor;
+namespace SkillTreeEditor.Data;
 
 public class BreedData
 {

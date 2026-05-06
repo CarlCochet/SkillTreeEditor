@@ -1,4 +1,7 @@
-﻿namespace SkillTreeEditor;
+﻿using SkillTreeEditor.Data;
+using SkillTreeEditor.Services;
+
+namespace SkillTreeEditor;
 
 public class Fighter
 {
@@ -7,7 +10,7 @@ public class Fighter
     private int _mp;
     private int _range;
     private int _init;
-    
+
     private int _resFlatFire;
     private int _resFlatEarth;
     private int _resFlatWater;
@@ -46,21 +49,21 @@ public class Fighter
     private int _summonHp;
 
     private int _globalStatsValue;
-    
+
     private SphereBoardData _sphereBoard;
     private int _totalXp;
     private int _totalSpheres;
-    
+
     private BreedData _breed;
     private BreedWeightsData _breedWeights;
-    private App _app;
+    private ProjectStore _store;
 
-    public Fighter(SphereBoardData sphereBoard, App app)
+    public Fighter(SphereBoardData sphereBoard, ProjectStore store)
     {
         _sphereBoard = sphereBoard;
-        _breed = app.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
-        _breedWeights = app.BreedWeights.First(breedWeights => (int)breedWeights.Breed == sphereBoard.BreedId);
-        _app = app;
+        _breed = store.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
+        _breedWeights = store.BreedWeights.First(breedWeights => (int)breedWeights.Breed == sphereBoard.BreedId);
+        _store = store;
         ComputeStats();
     }
 
@@ -108,7 +111,7 @@ public class Fighter
         _summonCc = _breed.BaseEvolutionModeSummonMasteryCritical;
         _summonTackle = _breed.BaseEvolutionModeSummonMasteryBlock;
         _summonHp = _breed.BaseEvolutionModeSummonMasteryHp;
-        
+
         _totalXp = 0;
         _totalSpheres = 0;
     }
@@ -117,7 +120,7 @@ public class Fighter
     {
         ResetStats();
 
-        foreach (var sphere in _app.Spheres.Where(s => s.SphereBoardId == _sphereBoard.Id))
+        foreach (var sphere in _store.Spheres.Where(s => s.SphereBoardId == _sphereBoard.Id))
         {
             _totalXp += sphere.XpNumber;
             var isValid = false;
@@ -328,7 +331,7 @@ public class Fighter
                     case Enums.ActionType.CharacteristicLossDodge:
                         _dodge -= value;
                         break;
-                    
+
                     case Enums.ActionType.CharacteristicGainSummonNumber:
                         _summonNumber += value;
                         break;
@@ -355,7 +358,7 @@ public class Fighter
 
         ComputeWeightedStatsValue();
     }
-    
+
     public string GetStatsText()
     {
         var lines = new List<string>
@@ -424,31 +427,31 @@ public class Fighter
 
         value += _hp * _breedWeights.HpWeight;
         value += _range * _breedWeights.RangeWeight;
-        
+
         value += _resPercentFire * _breedWeights.ResPercentFireWeight;
         value += _resPercentEarth * _breedWeights.ResPercentEarthWeight;
         value += _resPercentWater * _breedWeights.ResPercentWaterWeight;
         value += _resPercentWind * _breedWeights.ResPercentWindWeight;
         value += _resPercentAll * _breedWeights.ResPercentAllWeight;
-        
+
         value += _dmgPercentFire * _breedWeights.DmgPercentFireWeight;
         value += _dmgPercentEarth * _breedWeights.DmgPercentEarthWeight;
         value += _dmgPercentWater * _breedWeights.DmgPercentWaterWeight;
         value += _dmgPercentWind * _breedWeights.DmgPercentWindWeight;
         value += _dmgPercentAll * _breedWeights.DmgPercentAllWeight;
-        
+
         value += _cc * _breedWeights.CcWeight;
         value += _heal * _breedWeights.HealWeight;
         value += _tackle * _breedWeights.TackleWeight;
         value += _dodge * _breedWeights.DodgeWeight;
-        
+
         value += _summonHp * _breedWeights.SummonHpWeight;
         value += _summonDmg * _breedWeights.SummonDmgWeight;
         value += _summonRes * _breedWeights.SummonResWeight;
         value += _summonCc * _breedWeights.SummonCcWeight;
         value += _summonTackle * _breedWeights.SummonTackleWeight;
         value += _summonNumber * _breedWeights.SummonNumberWeight;
-        
+
         _globalStatsValue = (int)value;
     }
 }
