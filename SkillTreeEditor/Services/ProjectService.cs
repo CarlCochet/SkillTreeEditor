@@ -128,7 +128,6 @@ public class ProjectService(ProjectStore store)
             Id = GenerateSphereBoardId(),
             SeasonId = 1,
             BreedId = 1,
-            FighterCardListId = 5,
             InitialSpellIds = [31, 36, 34],
             StartX = 1,
             StartY = 1,
@@ -261,7 +260,7 @@ public class ProjectService(ProjectStore store)
     {
         return sphere.Effects.Count > 0
                || sphere.SpellId > 0
-               || sphere.FighterCardListId > 0
+               || sphere.FighterCardsIds.Count > 0
                || sphere.TeleportXPosition > 0
                || sphere.TeleportYPosition > 0;
     }

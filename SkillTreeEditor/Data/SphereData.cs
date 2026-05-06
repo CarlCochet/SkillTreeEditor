@@ -10,7 +10,6 @@ public class SphereData
     [JsonPropertyName("xpNumber")] public int XpNumber { get; set; }
     [JsonPropertyName("spellId")] public int SpellId { get; set; }
     [JsonPropertyName("effects")] public List<EffectData> Effects { get; set; } = [];
-    [JsonPropertyName("fighterCardListId")] public int FighterCardListId { get; set; }
     [JsonPropertyName("barrierCoachCards")] public List<int> BarrierCoachCards { get; set; } = [];
     [JsonPropertyName("teleportXPosition")] public int TeleportXPosition { get; set; }
     [JsonPropertyName("teleportYPosition")] public int TeleportYPosition { get; set; }
@@ -25,7 +24,6 @@ public class SphereData
         XpNumber = 0;
         SpellId = 0;
         Effects.Clear();
-        FighterCardListId = 0;
         BarrierCoachCards.Clear();
         TeleportXPosition = 0;
         TeleportYPosition = 0;
@@ -42,7 +40,6 @@ public class SphereData
             SphereBoardId = SphereBoardId,
             XpNumber = XpNumber,
             SpellId = SpellId,
-            FighterCardListId = FighterCardListId,
             BarrierCoachCards = [.. BarrierCoachCards],
             TeleportXPosition = TeleportXPosition,
             TeleportYPosition = TeleportYPosition,

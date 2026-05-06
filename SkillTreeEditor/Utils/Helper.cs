@@ -37,7 +37,7 @@ public class Helper
         var id = sphere switch
         {
             { Impassable: true } => 34,
-            { FighterCardListId: not 0 } => 31,
+            { FighterCardsIds.Count: > 0 } => 31,
             { SpellId: not 0 } => 30,
             { TeleportXPosition: not 0 } or { TeleportYPosition: not 0 } => 32,
             _ => 0
