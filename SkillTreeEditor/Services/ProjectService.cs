@@ -85,6 +85,16 @@ public class ProjectService(ProjectStore store)
             store.BreedWeights.AddRange(weights);
             Console.WriteLine($"Loaded {store.BreedWeights.Count} breed weights");
         }
+
+        var fighterCardsPath = Path.Combine(folderPath, "fighter_cards.json");
+        if (File.Exists(fighterCardsPath))
+        {
+            var json = File.ReadAllText(fighterCardsPath);
+            var cards = JsonSerializer.Deserialize<List<FighterCardData>>(json, _jsonOptions) ?? [];
+            store.FighterCards.Clear();
+            store.FighterCards.AddRange(cards);
+            Console.WriteLine($"Loaded {store.FighterCards.Count} fighter cards");
+        }
     }
 
     public void SaveProjectFolder(string folderPath)
