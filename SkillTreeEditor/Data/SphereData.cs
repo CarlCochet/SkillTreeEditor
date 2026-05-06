@@ -18,6 +18,7 @@ public class SphereData
     [JsonPropertyName("impassable")] public bool Impassable { get; set; }
     [JsonPropertyName("xposition")] public int XPosition { get; set; }
     [JsonPropertyName("linkedSphereIds")] public List<int> LinkedSphereIds { get; set; } = [];
+    [JsonPropertyName("fighterCardsIds")] public List<int> FighterCardsIds { get; set; } = [];
 
     public void Reset()
     {
@@ -30,6 +31,7 @@ public class SphereData
         TeleportYPosition = 0;
         Impassable = false;
         LinkedSphereIds.Clear();
+        FighterCardsIds.Clear();
     }
     
     public SphereData Copy()
@@ -48,6 +50,7 @@ public class SphereData
             Impassable = Impassable,
             XPosition = XPosition,
             LinkedSphereIds = [.. LinkedSphereIds],
+            FighterCardsIds = [.. FighterCardsIds],
             Effects = Effects.Select(e => e.Copy()).ToList()
         };
     }

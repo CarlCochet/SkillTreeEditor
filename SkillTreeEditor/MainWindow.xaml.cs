@@ -79,6 +79,7 @@ public partial class MainWindow : Window
         LoadAreaShapeSelector();
         LoadTriggerSelectors();
         LoadTargetSelector();
+        RefreshFighterCardSelector();
 
         UpdateSphereControlsFromSelectedSphere();
         UpdateEffectControlsFromSelectedEffect();
@@ -130,6 +131,7 @@ public partial class MainWindow : Window
         var selectedFolder = dialog.SelectedPath;
         _service.LoadProjectFolder(selectedFolder);
 
+        RefreshFighterCardSelector();
         RefreshSphereBoardSelector();
         if (_store.SphereBoards.Count == 0)
             return;
@@ -404,6 +406,33 @@ public partial class MainWindow : Window
         _renderer.DrawSphere(_selectedSphere, IsStartPosition(_selectedSphere));
     }
 
+    private void FighterCardAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphere is null || _isUpdatingSphereControls)
+            return;
+
+        if (SphereFighterCardSelector.SelectedValue is not int cardId)
+            return;
+
+        if (_selectedSphere.FighterCardsIds.Contains(cardId))
+            return;
+
+        _selectedSphere.FighterCardsIds.Add(cardId);
+        UpdateSphereControlsFromSelectedSphere();
+    }
+
+    private void FighterCardRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphere is null || _isUpdatingSphereControls)
+            return;
+
+        if (SphereFighterCardsListBox.SelectedItem is not Helper.EnumItem item)
+            return;
+
+        _selectedSphere.FighterCardsIds.Remove(item.Id);
+        UpdateSphereControlsFromSelectedSphere();
+    }
+
     private void SphereValueTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_selectedSphere is null || _isUpdatingSphereControls)
@@ -422,9 +451,6 @@ public partial class MainWindow : Window
                 UpdateFighterStatsOverlay();
             }
         }
-
-        if (int.TryParse(SphereFighterCardListIdTextBox.Text, out var fighterCardListId))
-            _selectedSphere.FighterCardListId = fighterCardListId;
 
         if (int.TryParse(SphereTeleportXTextBox.Text, out var teleportX))
             _selectedSphere.TeleportXPosition = teleportX;
@@ -720,7 +746,7 @@ public partial class MainWindow : Window
     {
         target.XpNumber = source.XpNumber;
         target.SpellId = source.SpellId;
-        target.FighterCardListId = source.FighterCardListId;
+        target.FighterCardsIds = [.. source.FighterCardsIds];
         target.BarrierCoachCards = [.. source.BarrierCoachCards];
         target.TeleportXPosition = source.TeleportXPosition;
         target.TeleportYPosition = source.TeleportYPosition;
@@ -796,7 +822,8 @@ public partial class MainWindow : Window
                 SphereTeleportYTextBox.Text = string.Empty;
                 SphereXPositionTextBox.Text = string.Empty;
                 SphereYPositionTextBox.Text = string.Empty;
-                SphereFighterCardListIdTextBox.Text = string.Empty;
+                SphereFighterCardsListBox.ItemsSource = null;
+                SphereFighterCardSelector.SelectedIndex = -1;
                 SphereSpellSelector.SelectedIndex = -1;
                 SphereImpassableCheckBox.IsChecked = false;
                 EffectSelector.ItemsSource = null;
@@ -816,7 +843,11 @@ public partial class MainWindow : Window
             SphereTeleportYTextBox.Text = _selectedSphere.TeleportYPosition.ToString();
             SphereXPositionTextBox.Text = _selectedSphere.XPosition.ToString();
             SphereYPositionTextBox.Text = _selectedSphere.YPosition.ToString();
-            SphereFighterCardListIdTextBox.Text = _selectedSphere.FighterCardListId.ToString();
+            SphereFighterCardsListBox.ItemsSource = _selectedSphere.FighterCardsIds
+                .Select(id => _store.FighterCards.FirstOrDefault(fc => fc.Id == id))
+                .Where(fc => fc is not null)
+                .Select(fc => new Helper.EnumItem(fc!.Id, fc.Name))
+                .ToList();
             SphereSpellSelector.SelectedValue = _selectedSphere.SpellId;
             SphereImpassableCheckBox.IsChecked = _selectedSphere.Impassable;
             RefreshEffectSelector();
@@ -1129,6 +1160,14 @@ public partial class MainWindow : Window
     {
         EffectSelector.ItemsSource = _selectedSphere?.Effects;
         EffectSelector.Items.Refresh();
+    }
+
+    private void RefreshFighterCardSelector()
+    {
+        SphereFighterCardSelector.ItemsSource = _store.FighterCards
+            .Select(fc => new Helper.EnumItem(fc.Id, fc.Name))
+            .OrderBy(item => item.Name)
+            .ToList();
     }
 
     private void UpdateFighterStatsOverlay()
