@@ -1,6 +1,4 @@
-﻿using System.Windows;
-
-namespace SkillTreeEditor;
+﻿namespace SkillTreeEditor;
 
 public partial class App : System.Windows.Application
 {

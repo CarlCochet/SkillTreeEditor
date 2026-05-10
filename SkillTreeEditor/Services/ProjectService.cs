@@ -221,6 +221,12 @@ public class ProjectService(ProjectStore store)
                     HashSet<int> visited = [origin.Id];
                     ExploreBranch(neighbor, sphereByPosition, visited, linkedSphereIds);
                 }
+                
+                var teleportPos = (origin.TeleportXPosition, origin.TeleportYPosition);
+                if (sphereByPosition.TryGetValue(teleportPos, out var teleportDest))
+                {
+                    linkedSphereIds.Add(teleportDest.Id);
+                }
 
                 origin.LinkedSphereIds = linkedSphereIds.ToList();
             }

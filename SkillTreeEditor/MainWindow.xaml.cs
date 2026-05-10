@@ -11,7 +11,6 @@ using SkillTreeEditor.Services;
 using Application = System.Windows.Application;
 using Brushes = System.Windows.Media.Brushes;
 using ComboBox = System.Windows.Controls.ComboBox;
-using Image = System.Windows.Controls.Image;
 using ListBox = System.Windows.Controls.ListBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Windows.Point;
