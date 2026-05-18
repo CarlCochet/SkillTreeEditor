@@ -17,6 +17,8 @@ public class SphereBoardRenderer
     private readonly Dictionary<int, ImageSource> _images;
     private readonly Dictionary<(int X, int Y), List<UIElement>> _tiles = [];
 
+    public Dictionary<(int X, int Y), Brush>? CostBrushes { get; set; }
+
     private UIElement? _selectionMarker;
     private UIElement? _teleportLine;
 
@@ -51,7 +53,12 @@ public class SphereBoardRenderer
     {
         var iconId = Helper.GetIconIdFromSphere(sphere);
         _images.TryGetValue(iconId, out var icon);
-        DrawTile(sphere.XPosition, sphere.YPosition, Brushes.BurlyWood, icon);
+
+        Brush brush = Brushes.BurlyWood;
+        if (CostBrushes is not null && CostBrushes.TryGetValue((sphere.XPosition, sphere.YPosition), out var costBrush))
+            brush = costBrush;
+
+        DrawTile(sphere.XPosition, sphere.YPosition, brush, icon);
 
         if (isStartPosition)
             DrawTile(sphere.XPosition, sphere.YPosition, Brushes.Lime);

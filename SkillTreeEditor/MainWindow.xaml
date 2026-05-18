@@ -135,13 +135,18 @@
                                            HorizontalAlignment="Left"
                                            SelectionChanged="SphereBoardSelector_SelectionChanged" />
                              </StackPanel>
-                             <Button Content="Clear All Sphere Data"
-                                     Margin="0,6,0,0"
-                                     Padding="8,4"
-                                     HorizontalAlignment="Left"
-                                     Click="ClearCurrentBoardData_Click" />
+                              <Button Content="Clear All Sphere Data"
+                                      Margin="0,6,0,0"
+                                      Padding="8,4"
+                                      HorizontalAlignment="Left"
+                                      Click="ClearCurrentBoardData_Click" />
+                              <CheckBox x:Name="CostOverlayCheckBox"
+                                        Content="Show XP cost overlay"
+                                        Margin="0,6,0,0"
+                                        Checked="CostOverlayCheckBox_Changed"
+                                        Unchecked="CostOverlayCheckBox_Changed" />
 
-                            <Separator Margin="0,12,0,12" />
+                             <Separator Margin="0,12,0,12" />
 
                             <TextBlock Text="Sphere Board Data"
                                        Style="{StaticResource SectionHeaderStyle}" />

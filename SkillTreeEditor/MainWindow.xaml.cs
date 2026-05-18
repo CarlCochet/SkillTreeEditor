@@ -18,6 +18,7 @@ using SharpImage = SixLabors.ImageSharp.Image;
 using SixLabors.ImageSharp.PixelFormats;
 using SkillTreeEditor.Data;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using Color = System.Windows.Media.Color;
 using RichTextBox = System.Windows.Controls.RichTextBox;
 
 namespace SkillTreeEditor;
@@ -44,6 +45,7 @@ public partial class MainWindow : Window
     private bool _isUpdatingEffectControls;
 
     private EditorMode _sphereEditionMode = EditorMode.Select;
+    private bool _showCostOverlay;
     private Point _panStartMousePosition;
     private Point _panStartCanvasOffset;
     private SphereBoardData? _selectedSphereBoard;
@@ -115,6 +117,9 @@ public partial class MainWindow : Window
         UpdateSphereControlsFromSelectedSphere();
         UpdateEffectControlsFromSelectedEffect();
         _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
+
+        if (_showCostOverlay)
+            UpdateCostOverlay();
     }
 
     private void Open_Click(object sender, RoutedEventArgs e)
@@ -137,6 +142,9 @@ public partial class MainWindow : Window
 
         _selectedSphereBoard = _store.SphereBoards[0];
         _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
+
+        if (_showCostOverlay)
+            UpdateCostOverlay();
 
         _service.InitializeFighters();
         UpdateFighterStatsOverlay();
@@ -291,6 +299,9 @@ public partial class MainWindow : Window
         {
             _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
             UpdateFighterStatsOverlay();
+
+            if (_showCostOverlay)
+                UpdateCostOverlay();
         }
     }
 
@@ -305,6 +316,126 @@ public partial class MainWindow : Window
         }
 
         _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
+
+        if (_showCostOverlay)
+            UpdateCostOverlay();
+    }
+
+    private void CostOverlayCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        _showCostOverlay = CostOverlayCheckBox.IsChecked == true;
+        UpdateCostOverlay();
+    }
+
+    private void UpdateCostOverlay()
+    {
+        if (_selectedSphereBoard is null)
+            return;
+
+        if (_showCostOverlay)
+        {
+            var costs = ComputeCostsForAllSpheres();
+            var reachableCosts = costs.Values.Where(c => c != int.MaxValue).ToList();
+            var maxCost = reachableCosts.Count > 0 ? reachableCosts.Max() : 0;
+            _renderer.CostBrushes = costs.ToDictionary(kvp => kvp.Key, kvp => GetCostColor(kvp.Value, maxCost));
+        }
+        else
+        {
+            _renderer.CostBrushes = null;
+        }
+
+        _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
+    }
+
+    private Dictionary<(int X, int Y), int> ComputeCostsForAllSpheres()
+    {
+        var costs = new Dictionary<(int X, int Y), int>();
+
+        var sphereByPosition = _store.Spheres
+            .Where(s => s.SphereBoardId == _selectedSphereBoard!.Id && !s.Impassable)
+            .ToDictionary(s => (s.XPosition, s.YPosition));
+
+        var start = (_selectedSphereBoard!.StartX, _selectedSphereBoard.StartY);
+
+        foreach (var pos in sphereByPosition.Keys)
+            costs[pos] = int.MaxValue;
+
+        var queue = new Queue<(int X, int Y)>();
+        var visited = new HashSet<(int X, int Y)>();
+        var accumulatedCost = new Dictionary<(int X, int Y), int>();
+
+        queue.Enqueue(start);
+        visited.Add(start);
+        accumulatedCost[start] = sphereByPosition.TryGetValue(start, out var startS) ? startS.XpNumber : 0;
+
+        (int Dx, int Dy)[] directions = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            var currentCost = accumulatedCost[current];
+
+            if (costs.ContainsKey(current))
+                costs[current] = Math.Min(costs[current], currentCost);
+
+            foreach (var (dx, dy) in directions)
+            {
+                var next = (current.X + dx, current.Y + dy);
+                if (!visited.Contains(next) && sphereByPosition.ContainsKey(next))
+                {
+                    visited.Add(next);
+                    accumulatedCost[next] = currentCost + sphereByPosition[next].XpNumber;
+                    queue.Enqueue(next);
+                }
+            }
+
+            if (sphereByPosition.TryGetValue(current, out var currentSphere) &&
+                (currentSphere.TeleportXPosition != 0 || currentSphere.TeleportYPosition != 0))
+            {
+                var tpDest = (currentSphere.TeleportXPosition, currentSphere.TeleportYPosition);
+                if (!visited.Contains(tpDest) && sphereByPosition.ContainsKey(tpDest))
+                {
+                    visited.Add(tpDest);
+                    accumulatedCost[tpDest] = currentCost + sphereByPosition[tpDest].XpNumber;
+                    queue.Enqueue(tpDest);
+                }
+            }
+        }
+
+        return costs;
+    }
+
+    private static System.Windows.Media.Brush GetCostColor(int cost, int maxCost)
+    {
+        if (cost == int.MaxValue)
+            return new SolidColorBrush(Color.FromRgb(100, 100, 100));
+
+        if (maxCost <= 0)
+            return new SolidColorBrush(Color.FromRgb(76, 175, 80));
+
+        var t = Math.Min(1.0, Math.Sqrt((double)cost / maxCost));
+
+        Color c1, c2;
+        double ft;
+
+        if (t < 0.5)
+        {
+            c1 = Color.FromRgb(76, 175, 80);
+            c2 = Color.FromRgb(255, 235, 59);
+            ft = t / 0.5;
+        }
+        else
+        {
+            c1 = Color.FromRgb(255, 235, 59);
+            c2 = Color.FromRgb(244, 67, 54);
+            ft = (t - 0.5) / 0.5;
+        }
+
+        var r = (byte)(c1.R + (c2.R - c1.R) * ft);
+        var g = (byte)(c1.G + (c2.G - c1.G) * ft);
+        var b = (byte)(c1.B + (c2.B - c1.B) * ft);
+
+        return new SolidColorBrush(Color.FromRgb(r, g, b));
     }
 
     private void BreedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -463,6 +594,8 @@ public partial class MainWindow : Window
                 UpdateFighterStatsOverlay();
             }
             UpdateTotalXpDisplay();
+            if (_showCostOverlay)
+                UpdateCostOverlay();
         }
 
         if (int.TryParse(SphereTeleportXTextBox.Text, out var teleportX))
