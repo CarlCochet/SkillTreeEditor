@@ -294,6 +294,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ClearCurrentBoardData_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedSphereBoard is null)
+            return;
+
+        foreach (var sphere in _store.Spheres.Where(s => s.SphereBoardId == _selectedSphereBoard.Id))
+        {
+            sphere.Reset();
+        }
+
+        _renderer.DrawBoard(_selectedSphereBoard, _store.Spheres);
+    }
+
     private void BreedSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_selectedSphereBoard is null || _isUpdatingSphereBoardControls)

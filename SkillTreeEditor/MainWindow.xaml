@@ -130,11 +130,16 @@
                                            Opacity="0.7"
                                            Margin="0,0,8,0"
                                            VerticalAlignment="Center" />
-                                <ComboBox x:Name="SphereBoardSelector"
-                                          Width="180"
-                                          HorizontalAlignment="Left"
-                                          SelectionChanged="SphereBoardSelector_SelectionChanged" />
-                            </StackPanel>
+                             <ComboBox x:Name="SphereBoardSelector"
+                                           Width="180"
+                                           HorizontalAlignment="Left"
+                                           SelectionChanged="SphereBoardSelector_SelectionChanged" />
+                             </StackPanel>
+                             <Button Content="Clear All Sphere Data"
+                                     Margin="0,6,0,0"
+                                     Padding="8,4"
+                                     HorizontalAlignment="Left"
+                                     Click="ClearCurrentBoardData_Click" />
 
                             <Separator Margin="0,12,0,12" />
 
