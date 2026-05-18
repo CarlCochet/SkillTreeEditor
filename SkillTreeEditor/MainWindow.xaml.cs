@@ -462,6 +462,7 @@ public partial class MainWindow : Window
                 _store.Fighters[_selectedSphereBoard.Id].ComputeStats();
                 UpdateFighterStatsOverlay();
             }
+            UpdateTotalXpDisplay();
         }
 
         if (int.TryParse(SphereTeleportXTextBox.Text, out var teleportX))
@@ -822,6 +823,87 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateTotalXpDisplay()
+    {
+        if (_selectedSphereBoard is null || _selectedSphere is null)
+        {
+            SphereTotalXpTextBlock.Text = string.Empty;
+            return;
+        }
+
+        var sphereByPosition = _store.Spheres
+            .Where(s => s.SphereBoardId == _selectedSphereBoard.Id && !s.Impassable)
+            .ToDictionary(s => (s.XPosition, s.YPosition));
+
+        var start = (_selectedSphereBoard.StartX, _selectedSphereBoard.StartY);
+        var target = (_selectedSphere.XPosition, _selectedSphere.YPosition);
+
+        if (!sphereByPosition.ContainsKey(target))
+        {
+            SphereTotalXpTextBlock.Text = string.Empty;
+            return;
+        }
+
+        var queue = new Queue<(int X, int Y)>();
+        var visited = new HashSet<(int X, int Y)>();
+        var parent = new Dictionary<(int X, int Y), (int X, int Y)?>();
+
+        queue.Enqueue(start);
+        visited.Add(start);
+        parent[start] = null;
+
+        (int Dx, int Dy)[] directions = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+
+            if (current == target)
+            {
+                var totalXp = 0;
+                var pathNode = current;
+                while (pathNode != start)
+                {
+                    if (sphereByPosition.TryGetValue(pathNode, out var sphere))
+                        totalXp += sphere.XpNumber;
+                    if (parent[pathNode] is not null)
+                        pathNode = parent[pathNode]!.Value;
+                    else
+                        break;
+                }
+                if (sphereByPosition.TryGetValue(start, out var startSphere))
+                    totalXp += startSphere.XpNumber;
+                SphereTotalXpTextBlock.Text = totalXp.ToString();
+                return;
+            }
+
+            foreach (var (dx, dy) in directions)
+            {
+                var next = (current.X + dx, current.Y + dy);
+                if (!visited.Contains(next) && sphereByPosition.ContainsKey(next))
+                {
+                    visited.Add(next);
+                    parent[next] = current;
+                    queue.Enqueue(next);
+                }
+            }
+
+            if (sphereByPosition.TryGetValue(current, out var currentSphere) &&
+                (currentSphere.TeleportXPosition != 0 || currentSphere.TeleportYPosition != 0))
+            {
+                var tpDest = (currentSphere.TeleportXPosition, currentSphere.TeleportYPosition);
+                if (!visited.Contains(tpDest) && sphereByPosition.ContainsKey(tpDest))
+                {
+                    visited.Add(tpDest);
+                    parent[tpDest] = current;
+                    queue.Enqueue(tpDest);
+                }
+            }
+        }
+
+        SphereTotalXpTextBlock.Text = "0";
+    }
+
     private void UpdateSphereControlsFromSelectedSphere()
     {
         if (_selectedSphere is null)
@@ -839,6 +921,7 @@ public partial class MainWindow : Window
                 SphereSpellSelector.SelectedIndex = -1;
                 SphereImpassableCheckBox.IsChecked = false;
                 EffectSelector.ItemsSource = null;
+                SphereTotalXpTextBlock.Text = string.Empty;
             }
             finally
             {
@@ -863,6 +946,7 @@ public partial class MainWindow : Window
             SphereSpellSelector.SelectedValue = _selectedSphere.SpellId;
             SphereImpassableCheckBox.IsChecked = _selectedSphere.Impassable;
             RefreshEffectSelector();
+            UpdateTotalXpDisplay();
         }
         finally
         {
