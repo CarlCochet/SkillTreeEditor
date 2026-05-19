@@ -364,7 +364,8 @@ public class Fighter
         var lines = new List<string>
         {
             $"Total XP: {_totalXp}",
-            $"Total Spheres: {_totalSpheres}",
+            $"Effect Spheres: {_totalSpheres}",
+            $"Total Size: {_store.Spheres.Count(s => s.SphereBoardId == _sphereBoard.Id)}",
             $"Global value: {_globalStatsValue}",
             ""
         };

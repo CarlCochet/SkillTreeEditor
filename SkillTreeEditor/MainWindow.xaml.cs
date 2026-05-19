@@ -804,6 +804,7 @@ public partial class MainWindow : Window
         sphere.Reset();
         SetSelectedSphere(sphere);
         _renderer.DrawSphere(sphere, IsStartPosition(sphere));
+        UpdateFighterStatsOverlay();
     }
 
     private void RemoveSphere(int x, int y)
@@ -816,6 +817,7 @@ public partial class MainWindow : Window
         _service.RemoveSphere(x, y, _selectedSphereBoard.Id);
         _selectedSphere = null;
         _renderer.RemoveTile(x, y);
+        UpdateFighterStatsOverlay();
     }
 
     private void SelectSphere(int x, int y)
