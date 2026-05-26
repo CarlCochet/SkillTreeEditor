@@ -34,17 +34,7 @@ public class ProjectService(ProjectStore store)
             Console.WriteLine($"Loaded {store.Spheres.Count} spheres");
         }
 
-        foreach (var sphere in store.Spheres)
-        {
-            sphere.BarrierCoachCards = [];
-            if (sphere.Id == 0)
-                sphere.Id = GenerateSphereId();
-            foreach (var sphereEffect in sphere.Effects)
-            {
-                if (sphereEffect.Id == 0)
-                    sphereEffect.Id = GenerateEffectId();
-            }
-        }
+        IndexSpheres();
 
         var spellPath = Path.Combine(folderPath, "spell_cards.json");
         if (File.Exists(spellPath))
@@ -75,6 +65,8 @@ public class ProjectService(ProjectStore store)
             store.CardEffects.AddRange(effects);
             Console.WriteLine($"Loaded {store.CardEffects.Count} card effects");
         }
+        
+        IndexEffects();
 
         var breedWeightsPath = Path.Combine(folderPath, "breed_stats_weights.json");
         if (File.Exists(breedWeightsPath))
@@ -283,6 +275,70 @@ public class ProjectService(ProjectStore store)
         (0, 1),
         (-1, 0)
     ];
+
+    private void IndexSpheres()
+    {
+        foreach (var sphere in store.Spheres)
+        {
+            sphere.BarrierCoachCards = [];
+            if (sphere.Id == 0)
+                sphere.Id = GenerateSphereId();
+            foreach (var sphereEffect in sphere.Effects)
+            {
+                if (sphereEffect.Id == 0)
+                    sphereEffect.Id = GenerateEffectId();
+            }
+        }
+
+        var duplicateSphereIds = store.Spheres
+            .GroupBy(s => s.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToHashSet();
+
+        if (duplicateSphereIds.Count <= 0) 
+            return;
+        
+        foreach (var sphere in store.Spheres)
+        {
+            if (!duplicateSphereIds.Contains(sphere.Id))
+                continue;
+
+            var newId = GenerateSphereId();
+            sphere.Id = newId;
+            foreach (var sphereEffect in sphere.Effects)
+            {
+                sphereEffect.ParentId = newId;
+            }
+        }
+
+        foreach (var sphereBoard in store.SphereBoards)
+        {
+            ComputeLinkedSpheresForBoard(sphereBoard);
+        }
+    }
+
+    private void IndexEffects()
+    {
+        var sphereEffectIds = store.Spheres.SelectMany(s => s.Effects).Select(e => e.Id).ToList();
+        var cardEffectIdSet = store.CardEffects.Select(e => e.Id).ToHashSet();
+
+        var duplicateEffectIds = sphereEffectIds
+            .GroupBy(id => id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .Concat(sphereEffectIds.Intersect(cardEffectIdSet))
+            .ToHashSet();
+
+        if (duplicateEffectIds.Count <= 0)
+            return;
+        
+        foreach (var effect in store.Spheres.SelectMany(s => s.Effects))
+        {
+            if (duplicateEffectIds.Contains(effect.Id))
+                effect.Id = GenerateEffectId();
+        }
+    }
 
     private int GenerateSphereBoardId()
     {
