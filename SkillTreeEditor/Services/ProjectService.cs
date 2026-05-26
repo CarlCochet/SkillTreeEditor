@@ -175,61 +175,66 @@ public class ProjectService(ProjectStore store)
         sphere.Effects.Add(newEffect);
     }
 
+    internal void ComputeLinkedSpheresForBoard(SphereBoardData sphereBoardData)
+    {
+        var spheres = store.Spheres
+            .Where(s => s.SphereBoardId == sphereBoardData.Id && !s.Impassable)
+            .ToList();
+
+        var startSphere = spheres.FirstOrDefault(s => s.XPosition == sphereBoardData.StartX
+                                                       && s.YPosition == sphereBoardData.StartY);
+
+        if (startSphere is null)
+        {
+            startSphere = new SphereData
+            {
+                Id = 0,
+                SphereBoardId = sphereBoardData.Id,
+                XPosition = sphereBoardData.StartX,
+                YPosition = sphereBoardData.StartY
+            };
+            store.Spheres.Add(startSphere);
+        }
+
+        var sphereByPosition = spheres.ToDictionary(s => (s.XPosition, s.YPosition));
+        var effectSpheres = spheres.Where(IsEffectSphere).ToList();
+        effectSpheres.Add(startSphere);
+
+        foreach (var sphere in effectSpheres)
+        {
+            sphere.LinkedSphereIds = [];
+        }
+
+        foreach (var origin in effectSpheres)
+        {
+            HashSet<int> linkedSphereIds = [];
+
+            foreach (var (dx, dy) in Directions)
+            {
+                var nextPos = (origin.XPosition + dx, origin.YPosition + dy);
+
+                if (!sphereByPosition.TryGetValue(nextPos, out var neighbor))
+                    continue;
+
+                HashSet<int> visited = [origin.Id];
+                ExploreBranch(neighbor, sphereByPosition, visited, linkedSphereIds);
+            }
+
+            var teleportPos = (origin.TeleportXPosition, origin.TeleportYPosition);
+            if (sphereByPosition.TryGetValue(teleportPos, out var teleportDest))
+            {
+                linkedSphereIds.Add(teleportDest.Id);
+            }
+
+            origin.LinkedSphereIds = linkedSphereIds.ToList();
+        }
+    }
+
     private void ComputeLinkedSpheres()
     {
         foreach (var sphereBoardData in store.SphereBoards)
         {
-            var spheres = store.Spheres
-                .Where(s => s.SphereBoardId == sphereBoardData.Id && !s.Impassable)
-                .ToList();
-
-            var startSphere = spheres.FirstOrDefault(s => s.XPosition == sphereBoardData.StartX
-                                                          && s.YPosition == sphereBoardData.StartY);
-
-            if (startSphere is null)
-            {
-                startSphere = new SphereData
-                {
-                    Id = 0,
-                    SphereBoardId = sphereBoardData.Id,
-                    XPosition = sphereBoardData.StartX,
-                    YPosition = sphereBoardData.StartY
-                };
-                store.Spheres.Add(startSphere);
-            }
-
-            var sphereByPosition = spheres.ToDictionary(s => (s.XPosition, s.YPosition));
-            var effectSpheres = spheres.Where(IsEffectSphere).ToList();
-            effectSpheres.Add(startSphere);
-
-            foreach (var sphere in effectSpheres)
-            {
-                sphere.LinkedSphereIds = [];
-            }
-
-            foreach (var origin in effectSpheres)
-            {
-                HashSet<int> linkedSphereIds = [];
-
-                foreach (var (dx, dy) in Directions)
-                {
-                    var nextPos = (origin.XPosition + dx, origin.YPosition + dy);
-
-                    if (!sphereByPosition.TryGetValue(nextPos, out var neighbor))
-                        continue;
-
-                    HashSet<int> visited = [origin.Id];
-                    ExploreBranch(neighbor, sphereByPosition, visited, linkedSphereIds);
-                }
-                
-                var teleportPos = (origin.TeleportXPosition, origin.TeleportYPosition);
-                if (sphereByPosition.TryGetValue(teleportPos, out var teleportDest))
-                {
-                    linkedSphereIds.Add(teleportDest.Id);
-                }
-
-                origin.LinkedSphereIds = linkedSphereIds.ToList();
-            }
+            ComputeLinkedSpheresForBoard(sphereBoardData);
         }
     }
 

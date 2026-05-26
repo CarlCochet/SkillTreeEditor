@@ -49,6 +49,7 @@ public class Fighter
     private int _summonHp;
 
     private int _globalStatsValue;
+    private int _intersections;
 
     private SphereBoardData _sphereBoard;
     private int _totalXp;
@@ -61,8 +62,8 @@ public class Fighter
     public Fighter(SphereBoardData sphereBoard, ProjectStore store)
     {
         _sphereBoard = sphereBoard;
-        _breed = store.Breeds.First(breed => breed.Id == sphereBoard.BreedId);
-        _breedWeights = store.BreedWeights.First(breedWeights => (int)breedWeights.Breed == sphereBoard.BreedId);
+        _breed = store.Breeds.FirstOrDefault(breed => breed.Id == sphereBoard.BreedId) ?? new BreedData();
+        _breedWeights = store.BreedWeights.FirstOrDefault(breedWeights => (int)breedWeights.Breed == sphereBoard.BreedId) ?? new BreedWeightsData();
         _store = store;
         ComputeStats();
     }
@@ -114,6 +115,12 @@ public class Fighter
 
         _totalXp = 0;
         _totalSpheres = 0;
+    }
+
+    public void RefreshBreed()
+    {
+        _breed = _store.Breeds.FirstOrDefault(breed => breed.Id == _sphereBoard.BreedId) ?? new BreedData();
+        _breedWeights = _store.BreedWeights.FirstOrDefault(breedWeights => (int)breedWeights.Breed == _sphereBoard.BreedId) ?? new BreedWeightsData();
     }
 
     public void ComputeStats()
@@ -359,8 +366,16 @@ public class Fighter
         ComputeWeightedStatsValue();
     }
 
+    private void ComputeIntersections()
+    {
+        _intersections = _store.Spheres
+            .Count(s => s.SphereBoardId == _sphereBoard.Id && s.LinkedSphereIds.Count > 2);
+    }
+
     public string GetStatsText()
     {
+        ComputeIntersections();
+        
         var lines = new List<string>
         {
             $"Total XP: {_totalXp}",
@@ -418,6 +433,9 @@ public class Fighter
         AddIfNotZero("Summon CC", _summonCc);
         AddIfNotZero("Summon Tackle", _summonTackle);
         AddIfNotZero("Summon HP", _summonHp);
+
+        lines.Add("");
+        lines.Add($"Intersections: {_intersections}");
 
         return string.Join(Environment.NewLine, lines);
     }

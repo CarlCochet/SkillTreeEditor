@@ -120,6 +120,8 @@ public partial class MainWindow : Window
 
         if (_showCostOverlay)
             UpdateCostOverlay();
+
+        UpdateFighterStatsOverlay();
     }
 
     private void Open_Click(object sender, RoutedEventArgs e)
@@ -319,6 +321,12 @@ public partial class MainWindow : Window
 
         if (_showCostOverlay)
             UpdateCostOverlay();
+
+        if (_store.Fighters.TryGetValue(_selectedSphereBoard.Id, out var fighter))
+        {
+            fighter.ComputeStats();
+        }
+        UpdateFighterStatsOverlay();
     }
 
     private void CostOverlayCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -447,6 +455,14 @@ public partial class MainWindow : Window
             return;
 
         _selectedSphereBoard.BreedId = breedId;
+
+        if (_store.Fighters.TryGetValue(_selectedSphereBoard.Id, out var fighter))
+        {
+            fighter.RefreshBreed();
+            fighter.ComputeStats();
+        }
+        UpdateFighterStatsOverlay();
+
         RefreshSpellSelectors(breedId);
 
         var defaultSpellIds = _store.SpellCards
@@ -1403,6 +1419,9 @@ public partial class MainWindow : Window
 
     private void UpdateFighterStatsOverlay()
     {
+        if (_selectedSphereBoard is not null)
+            _service.ComputeLinkedSpheresForBoard(_selectedSphereBoard);
+
         if (_selectedSphereBoard is null || !_store.Fighters.TryGetValue(_selectedSphereBoard.Id, out var fighter))
         {
             FighterStatsText.Text = string.Empty;
